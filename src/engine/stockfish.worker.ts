@@ -2,40 +2,21 @@
 
 /**
  * Stockfish Web Worker
- *
- * Handles all communication with the Stockfish WASM engine.
- * Runs in a separate thread to avoid blocking the UI.
- *
- * Messages from main thread:
- * - { type: 'init', payload: { multiPv, threads, skill } }
- * - { type: 'setPosition', payload: { fen } }
- * - { type: 'setPositionFromMoves', payload: { moves } }
- * - { type: 'analyze', payload: { depth?, movetimeMs? } }
- * - { type: 'stop' }
- * - { type: 'setOption', payload: { name, value } }
- * - { type: 'newGame' }
- *
- * Messages to main thread:
- * - { type: 'ready' }
- * - { type: 'engineLine', data: string }
- * - { type: 'bestmove', data: string }
- * - { type: 'error', data: string }
+ * Uses importScripts to load Stockfish WASM from public directory
  */
 
-let stockfishWorker: Worker | null = null
+let engine: any = null
 let isReady = false
-
-// Queue for commands sent before engine is ready
 const commandQueue: string[] = []
 
 function sendCommand(cmd: string) {
-  if (!stockfishWorker) {
+  if (!engine) {
     console.error('Stockfish not initialized')
     return
   }
 
   if (isReady) {
-    stockfishWorker.postMessage(cmd)
+    engine.postMessage(cmd)
   } else {
     commandQueue.push(cmd)
   }
@@ -44,8 +25,8 @@ function sendCommand(cmd: string) {
 function processQueue() {
   while (commandQueue.length > 0) {
     const cmd = commandQueue.shift()
-    if (cmd && stockfishWorker) {
-      stockfishWorker.postMessage(cmd)
+    if (cmd && engine) {
+      engine.postMessage(cmd)
     }
   }
 }
@@ -57,7 +38,7 @@ function handleEngineLine(line: string) {
   // Handle specific responses
   if (line === 'uciok') {
     // UCI initialization complete, send isready
-    stockfishWorker?.postMessage('isready')
+    engine.postMessage('isready')
   } else if (line === 'readyok') {
     if (!isReady) {
       isReady = true
@@ -71,31 +52,41 @@ function handleEngineLine(line: string) {
   }
 }
 
-// Initialize Stockfish
+// Initialize Stockfish using importScripts
 function initStockfish() {
   try {
-    // Load the Stockfish worker from public directory
-    // This is the lite-single version which is more compatible
-    stockfishWorker = new Worker('/stockfish/stockfish-17.1-lite-single-03e3232.js')
+    // Load Stockfish from public directory
+    importScripts('/stockfish/stockfish-17.1-lite-single-03e3232.js')
 
-    stockfishWorker.onmessage = (e: MessageEvent) => {
-      const line = typeof e.data === 'string' ? e.data : String(e.data)
-      handleEngineLine(line)
-    }
+    // @ts-ignore - Stockfish is loaded via importScripts
+    if (typeof Stockfish === 'function') {
+      // @ts-ignore
+      Stockfish().then((sf: any) => {
+        engine = sf
 
-    stockfishWorker.onerror = (error: ErrorEvent) => {
+        // Set up message listener
+        sf.addMessageListener((line: string) => {
+          handleEngineLine(line)
+        })
+
+        // Start UCI initialization
+        sf.postMessage('uci')
+      }).catch((error: any) => {
+        self.postMessage({
+          type: 'error',
+          data: `Failed to initialize Stockfish: ${error}`,
+        })
+      })
+    } else {
       self.postMessage({
         type: 'error',
-        data: `Stockfish worker error: ${error.message}`,
+        data: 'Stockfish function not found after importScripts',
       })
     }
-
-    // Start UCI initialization
-    stockfishWorker.postMessage('uci')
   } catch (error) {
     self.postMessage({
       type: 'error',
-      data: `Failed to initialize Stockfish: ${error}`,
+      data: `Failed to load Stockfish: ${error}`,
     })
   }
 }
@@ -106,7 +97,7 @@ self.addEventListener('message', (e: MessageEvent) => {
 
   switch (type) {
     case 'init': {
-      if (!stockfishWorker) {
+      if (!engine) {
         initStockfish()
       }
 
