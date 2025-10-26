@@ -1,6 +1,6 @@
 # Chess App
 
-A production-ready, fully functional web chess application built with React, TypeScript, and Vite. Features complete chess rules, drag-and-drop, click-to-move, and full keyboard accessibility.
+A production-ready, fully functional web chess application built with React, TypeScript, and Vite. Features complete chess rules, drag-and-drop, click-to-move, full keyboard accessibility, and **Stockfish 17.1 engine analysis**.
 
 ## Features
 
@@ -12,6 +12,16 @@ A production-ready, fully functional web chess application built with React, Typ
   - En passant captures
   - Pawn promotion with modal selection
   - Draw by repetition, 50-move rule, and insufficient material
+
+- **Stockfish 17.1 Engine Analysis** ⭐ **NEW**
+  - Real-time position analysis with WASM engine
+  - Multi-PV analysis (1-15 principal variations)
+  - Configurable search depth (8-24) and time (ms)
+  - Multi-threading support (requires COOP/COEP headers)
+  - Live evaluation display (centipawns and mate scores)
+  - Best move suggestions with one-click application
+  - Web Worker-based for non-blocking UI
+  - SAN (Standard Algebraic Notation) move display
 
 - **Multiple Input Methods**
   - **Click-to-move**: Click a piece to select, then click destination
@@ -120,7 +130,11 @@ Chess-v3/
 │   │   ├── MoveList.tsx     # Move history
 │   │   ├── PromotionModal.tsx
 │   │   ├── Controls.tsx     # Game controls
+│   │   ├── EnginePanel.tsx  # Stockfish analysis panel
 │   │   └── TopBar.tsx       # Header with theme toggle
+│   ├── engine/              # Stockfish integration
+│   │   ├── stockfish.worker.ts  # Web Worker wrapper
+│   │   └── useStockfish.ts      # React hook for engine
 │   ├── hooks/               # Custom React hooks
 │   │   ├── useKeyboardController.ts
 │   │   └── usePointerDrag.ts
@@ -130,6 +144,11 @@ Chess-v3/
 │   │   ├── chessEngine.ts   # Chess.js wrapper
 │   │   ├── sound.ts         # Sound effects
 │   │   └── theme.ts         # Theme utilities
+│   ├── utils/               # Helper utilities
+│   │   ├── uci.ts           # UCI protocol parsing
+│   │   └── eval.ts          # Evaluation formatting
+│   ├── types/
+│   │   └── stockfish.d.ts   # Stockfish type declarations
 │   ├── styles/
 │   │   └── index.css        # Tailwind + custom styles
 │   ├── __tests__/           # Test files
@@ -137,6 +156,10 @@ Chess-v3/
 │   │   └── setup.ts         # Test configuration
 │   ├── App.tsx
 │   └── main.tsx
+├── public/
+│   └── stockfish/           # Stockfish WASM files
+│       ├── stockfish-17.1-lite-single-03e3232.js
+│       └── stockfish-17.1-lite-single-03e3232.wasm
 ├── index.html
 ├── package.json
 ├── tsconfig.json
@@ -153,6 +176,7 @@ Chess-v3/
 - **Styling**: TailwindCSS 3
 - **State Management**: Zustand 4
 - **Chess Logic**: chess.js 1.0.0-beta.8
+- **Engine**: Stockfish 17.1 (WASM)
 - **Testing**: Vitest + React Testing Library
 - **Linting**: ESLint
 
@@ -227,6 +251,81 @@ npm run test          # Run once
 npm run test:ui       # Run with UI
 ```
 
+## Stockfish Engine Analysis
+
+The app includes a full integration with Stockfish 17.1 (WASM) for position analysis.
+
+### Features
+
+- **Multi-PV Analysis**: View up to 15 best lines simultaneously
+- **Configurable Depth**: Analyze from depth 8 to 24
+- **Time-based Search**: Set analysis time in milliseconds
+- **Real-time Evaluation**: See position scores in centipawns or mate sequences
+- **Best Move Application**: Apply the engine's suggested move with one click
+- **SAN Display**: Variations shown in Standard Algebraic Notation
+
+### Engine Panel Controls
+
+| Control | Description |
+|---------|-------------|
+| **MultiPV Slider** | Number of principal variations (1-15) |
+| **Depth Slider** | Search depth (8-24 plies) |
+| **Time Input** | Analysis time in milliseconds (overrides depth) |
+| **Threads** | Number of CPU threads (1, 2, 4, 8) |
+| **Analyze Button** | Start engine analysis |
+| **Stop Button** | Stop current analysis |
+| **Use Best Move** | Apply engine's recommended move |
+| **New Game** | Reset engine state |
+
+### Multi-Threading
+
+The engine supports multi-threading for faster analysis. However, this requires **Cross-Origin Isolation**:
+
+```html
+<!-- Add these headers to enable multi-threading -->
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+Without these headers, the engine will default to single-threaded mode (Threads = 1).
+
+### How It Works
+
+1. **Web Worker Architecture**: The engine runs in a dedicated Web Worker to keep the UI responsive
+2. **UCI Protocol**: Communicates using the Universal Chess Interface protocol
+3. **WASM Performance**: Stockfish WASM provides near-native performance
+4. **Position Sync**: Automatically syncs with board position on each move
+5. **Live Updates**: Analysis updates in real-time as the engine searches deeper
+
+### Evaluation Display
+
+- **Centipawns**: Displayed as ±X.XX (e.g., +0.35 = slight white advantage)
+- **Mate Scores**: Displayed as M# (e.g., M5 = mate in 5 moves)
+- **Side-to-Move**: Evaluation flips for Black's perspective
+
+### Usage Example
+
+```typescript
+// The engine is automatically integrated in App.tsx
+const engine = useStockfish(chess)
+
+// Initialize with options
+engine.init({ multiPv: 5, threads: 1, skill: 20 })
+
+// Set position
+engine.setPosition(chess.fen())
+
+// Start analysis
+engine.analyze({ depth: 20 })
+// or
+engine.analyze({ movetimeMs: 2000 })
+
+// Access results
+engine.lines // Array of PV lines with scores
+engine.bestMove // Best move in UCI format
+engine.thinking // Boolean: is engine currently analyzing
+```
+
 ## Browser Support
 
 Modern browsers with ES2020 support:
@@ -246,4 +345,5 @@ This is a demonstration project. Feel free to fork and modify as needed.
 
 - Chess piece SVGs based on standard chess iconography
 - Chess logic powered by [chess.js](https://github.com/jhlywa/chess.js)
+- Engine analysis powered by [Stockfish 17.1](https://stockfishchess.org/)
 - UI inspired by chess.com and lichess.org
