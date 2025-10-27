@@ -60,9 +60,11 @@ export function useStockfish(chessInstance?: Chess): UseStockfishReturn {
 
   // Initialize worker
   useEffect(() => {
+    console.log('[STOCKFISH] Creating worker...')
     const worker = new Worker(new URL('./stockfish.worker.ts', import.meta.url), {
       type: 'module',
     })
+    console.log('[STOCKFISH] Worker created')
 
     worker.addEventListener('message', (e: MessageEvent) => {
       const { type, data } = e.data
@@ -191,11 +193,17 @@ export function useStockfish(chessInstance?: Chess): UseStockfishReturn {
   )
 
   const init = useCallback((options?: StockfishOptions) => {
+    console.log('[STOCKFISH] init() called with options:', options)
+    console.log('[STOCKFISH] workerRef.current:', workerRef.current ? 'exists' : 'null')
     if (workerRef.current) {
+      console.log('[STOCKFISH] Sending init message to worker')
       workerRef.current.postMessage({
         type: 'init',
         payload: options,
       })
+      console.log('[STOCKFISH] Init message sent')
+    } else {
+      console.error('[STOCKFISH] Cannot send init - worker is null!')
     }
   }, [])
 

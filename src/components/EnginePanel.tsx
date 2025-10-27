@@ -25,7 +25,10 @@ function EnginePanel({
 
   // Initialize engine on mount
   useEffect(() => {
+    console.log('[ENGINE PANEL] Component mounted, calling engine.init()')
+    console.log('[ENGINE PANEL] engine object:', engine)
     engine.init({ multiPv, threads, skill: 20 })
+    console.log('[ENGINE PANEL] engine.init() call completed')
   }, [])
 
   const handleMultiPvChange = (value: number) => {
