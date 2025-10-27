@@ -103,6 +103,18 @@ export function useStockfish(chessInstance?: Chess): UseStockfishReturn {
 
     workerRef.current = worker
 
+    // Auto-initialize the engine with default options
+    console.log('[STOCKFISH] Auto-initializing engine with default options')
+    setTimeout(() => {
+      if (workerRef.current) {
+        console.log('[STOCKFISH] Sending auto-init message')
+        workerRef.current.postMessage({
+          type: 'init',
+          payload: { multiPv: 3, threads: 1, skill: 20 },
+        })
+      }
+    }, 0)
+
     return () => {
       worker.terminate()
     }

@@ -23,13 +23,8 @@ function EnginePanel({
   const [threads, setThreads] = useState(1)
   const [selectedPvIndex, setSelectedPvIndex] = useState<number | null>(null)
 
-  // Initialize engine on mount
-  useEffect(() => {
-    console.log('[ENGINE PANEL] Component mounted, calling engine.init()')
-    console.log('[ENGINE PANEL] engine object:', engine)
-    engine.init({ multiPv, threads, skill: 20 })
-    console.log('[ENGINE PANEL] engine.init() call completed')
-  }, [])
+  // Note: Engine is auto-initialized by useStockfish hook
+  // We only need to update options when user changes them
 
   const handleMultiPvChange = (value: number) => {
     setMultiPv(value)
