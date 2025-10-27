@@ -2,8 +2,7 @@
 
 /**
  * Stockfish Web Worker
- * Uses importScripts to load Stockfish WASM from public directory
- * Debug version with extensive logging
+ * Creates a nested classic worker to load Stockfish WASM (since module workers can't use importScripts)
  */
 
 let engine: any = null
@@ -62,88 +61,95 @@ function handleEngineLine(line: string) {
   }
 }
 
-// Initialize Stockfish using importScripts
+// Initialize Stockfish by creating a nested classic worker
 function initStockfish() {
   debug('Starting Stockfish initialization...')
 
   try {
-    debug('Loading stockfish via importScripts...')
-    // Load Stockfish from public directory
-    importScripts('/stockfish/stockfish-17.1-lite-single-03e3232.js')
-    debug('importScripts completed')
+    // Create a blob with classic worker code that loads Stockfish
+    const workerCode = `
+      // This is a classic worker that can use importScripts
+      console.log('[NESTED WORKER] Loading Stockfish via importScripts...');
+      importScripts('/stockfish/stockfish-17.1-lite-single-03e3232.js');
+      console.log('[NESTED WORKER] importScripts completed');
 
-    // Check what was loaded
-    // @ts-ignore
-    debug(`typeof Stockfish: ${typeof Stockfish}`)
-    // @ts-ignore
-    debug(`typeof STOCKFISH: ${typeof STOCKFISH}`)
-    // @ts-ignore
-    debug(`self keys: ${Object.keys(self).filter(k => k.toLowerCase().includes('stock')).join(', ')}`)
+      let stockfishEngine = null;
 
-    // Try different ways Stockfish might be exposed
-    // @ts-ignore
-    const StockfishFunc = typeof Stockfish !== 'undefined' ? Stockfish :
-                          // @ts-ignore
-                          typeof STOCKFISH !== 'undefined' ? STOCKFISH : null
+      // Initialize Stockfish
+      if (typeof Stockfish !== 'undefined') {
+        console.log('[NESTED WORKER] Found Stockfish function, calling it...');
+        const result = Stockfish();
 
-    if (StockfishFunc && typeof StockfishFunc === 'function') {
-      debug('Found Stockfish function, calling it...')
+        if (result && typeof result.then === 'function') {
+          console.log('[NESTED WORKER] Stockfish() returned a promise, waiting...');
+          result.then((sf) => {
+            console.log('[NESTED WORKER] Stockfish promise resolved!');
+            stockfishEngine = sf;
 
-      // Call Stockfish() - it returns a promise
-      const result = StockfishFunc()
+            // Set up message listener from Stockfish
+            sf.addMessageListener((line) => {
+              // Forward to parent worker
+              self.postMessage({ type: 'engineLine', data: line });
+            });
 
-      debug(`Stockfish() returned: ${typeof result}`)
+            // Send ready signal
+            self.postMessage({ type: 'ready' });
 
-      if (result && typeof result.then === 'function') {
-        debug('Stockfish() returned a promise, waiting...')
-        result.then((sf: any) => {
-          debug('Stockfish promise resolved!')
-          engine = sf
-
-          // Set up message listener
-          if (sf.addMessageListener) {
-            debug('Setting up message listener')
-            sf.addMessageListener((line: string) => {
-              handleEngineLine(line)
-            })
-          } else {
-            debug('ERROR: No addMessageListener method!')
-          }
-
-          // Start UCI initialization
-          debug('Sending UCI command')
-          sf.postMessage('uci')
-        }).catch((error: any) => {
-          debug(`Promise rejected: ${error}`)
-          self.postMessage({
-            type: 'error',
-            data: `Failed to initialize Stockfish: ${error}`,
-          })
-        })
-      } else {
-        debug('Stockfish() did not return a promise')
-        // Maybe it's synchronous?
-        engine = result
-        if (engine && engine.postMessage) {
-          debug('Using synchronous result')
-          if (engine.addMessageListener) {
-            engine.addMessageListener(handleEngineLine)
-          }
-          engine.postMessage('uci')
-        } else {
-          self.postMessage({
-            type: 'error',
-            data: 'Stockfish returned invalid object',
-          })
+            // Send initial UCI command
+            sf.postMessage('uci');
+          }).catch((error) => {
+            console.error('[NESTED WORKER] Promise rejected:', error);
+            self.postMessage({ type: 'error', data: String(error) });
+          });
         }
+      } else {
+        console.error('[NESTED WORKER] Stockfish not found!');
+        self.postMessage({ type: 'error', data: 'Stockfish not found' });
       }
-    } else {
-      debug(`ERROR: Stockfish function not found! Type: ${typeof StockfishFunc}`)
-      self.postMessage({
-        type: 'error',
-        data: 'Stockfish function not found after importScripts',
-      })
+
+      // Handle commands from parent worker
+      self.addEventListener('message', (e) => {
+        const { type, data } = e.data;
+        if (type === 'command' && stockfishEngine) {
+          stockfishEngine.postMessage(data);
+        }
+      });
+    `;
+
+    const blob = new Blob([workerCode], { type: 'application/javascript' })
+    const workerUrl = URL.createObjectURL(blob)
+
+    debug('Creating nested classic worker...')
+    const nestedWorker = new Worker(workerUrl)
+
+    nestedWorker.addEventListener('message', (e: MessageEvent) => {
+      const { type, data } = e.data
+
+      if (type === 'ready') {
+        debug('Nested worker reports Stockfish is ready')
+        engine = nestedWorker
+      } else if (type === 'engineLine') {
+        handleEngineLine(data)
+      } else if (type === 'error') {
+        debug(`Nested worker error: ${data}`)
+        self.postMessage({ type: 'error', data: `Nested worker failed: ${data}` })
+      }
+    })
+
+    nestedWorker.addEventListener('error', (e: ErrorEvent) => {
+      debug(`Nested worker error event: ${e.message}`)
+      self.postMessage({ type: 'error', data: `Nested worker error: ${e.message}` })
+    })
+
+    // Override engine.postMessage to send to nested worker
+    engine = {
+      postMessage: (cmd: string) => {
+        nestedWorker.postMessage({ type: 'command', data: cmd })
+      }
     }
+
+    debug('Nested worker created successfully')
+
   } catch (error) {
     debug(`Exception in initStockfish: ${error}`)
     self.postMessage({
