@@ -69,14 +69,18 @@ export function useStockfish(chessInstance?: Chess): UseStockfishReturn {
 
       switch (type) {
         case 'ready':
+          console.log('[STOCKFISH] Engine ready!')
           setState((prev) => ({ ...prev, ready: true }))
           break
 
         case 'engineLine':
+          // Log debug messages to console
+          console.log('[STOCKFISH]', data)
           handleEngineLine(data)
           break
 
         case 'bestmove':
+          console.log('[STOCKFISH] Best move:', data)
           setState((prev) => ({
             ...prev,
             bestMove: data,
@@ -85,6 +89,7 @@ export function useStockfish(chessInstance?: Chess): UseStockfishReturn {
           break
 
         case 'error':
+          console.error('[STOCKFISH ERROR]', data)
           setState((prev) => ({
             ...prev,
             error: data,
