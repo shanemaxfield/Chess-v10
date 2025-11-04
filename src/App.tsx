@@ -88,14 +88,20 @@ function App() {
         <div className="flex-1 flex flex-col items-center gap-4">
           <ChessBoard />
           <Controls />
+
+          {/* Chat Panel - Mobile view */}
+          <div className="xl:hidden w-full max-w-2xl" style={{ height: '400px' }}>
+            <ChatPanel />
+          </div>
         </div>
-        <aside className="lg:w-80 flex flex-col gap-6">
+        <aside className="w-full xl:w-80 flex flex-col gap-6">
           <MoveList />
-          <div className="h-96">
+          {/* Chat Panel - Desktop view */}
+          <div className="hidden xl:block" style={{ height: '400px' }}>
             <ChatPanel />
           </div>
         </aside>
-        <aside className="lg:w-96 flex flex-col">
+        <aside className="w-full xl:w-96 flex flex-col">
           <EnginePanel
             engine={engine}
             isWhiteToMove={isWhiteToMove}
