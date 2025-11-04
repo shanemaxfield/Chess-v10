@@ -80,11 +80,11 @@ export default function ChatPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+    <div className="flex flex-col h-full border-4 border-red-500 rounded-lg overflow-hidden bg-white dark:bg-gray-800" style={{ minHeight: '300px' }}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Chat Actions</h3>
-        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+      <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-600 bg-blue-500">
+        <h3 className="font-bold text-white text-xl">🤖 CHAT ACTIONS PANEL - YOU SHOULD SEE THIS!</h3>
+        <p className="text-sm text-white mt-1 font-semibold">
           Try: "move e2 to e4", "arrow b1 to c3", "highlight f7 and h7"
         </p>
       </div>
