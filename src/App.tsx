@@ -5,6 +5,7 @@ import Controls from './components/Controls'
 import MoveList from './components/MoveList'
 import PromotionModal from './components/PromotionModal'
 import EnginePanel from './components/EnginePanel'
+import ChatPanel from './components/ChatPanel'
 import { useGameStore } from './store/gameStore'
 import { initializeTheme } from './lib/theme'
 import { useStockfish } from './engine/useStockfish'
@@ -84,12 +85,15 @@ function App() {
     <div className="min-h-screen flex flex-col">
       <TopBar />
       <main className="flex-1 flex flex-col xl:flex-row gap-6 p-4 mx-auto w-full" style={{ maxWidth: '1600px' }}>
-        <div className="flex-1 flex flex-col items-center">
+        <div className="flex-1 flex flex-col items-center gap-4">
           <ChessBoard />
           <Controls />
         </div>
         <aside className="lg:w-80 flex flex-col gap-6">
           <MoveList />
+          <div className="h-96">
+            <ChatPanel />
+          </div>
         </aside>
         <aside className="lg:w-96 flex flex-col">
           <EnginePanel

@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { Chess, Square, PieceSymbol } from 'chess.js'
 import { PvLinePosition, fenToPvLineActions } from '../utils/pvLine'
+import { ArrowState } from '../lib/actions/ArrowController'
+import { HighlightState } from '../lib/actions/HighlightController'
 
 export type PlayerColor = 'w' | 'b'
 export type PieceType = 'p' | 'n' | 'b' | 'r' | 'q' | 'k'
@@ -33,6 +35,8 @@ interface GameState {
   focusCursorSquare: Square | null
   legalMoves: Square[]
   previewArrow: { from: Square; to: Square } | null
+  arrows: ArrowState[]
+  highlights: HighlightState[]
   
   // PV Line display
   displayedPvLine: {
@@ -65,6 +69,10 @@ interface GameState {
   setFocusCursor: (square: Square | null) => void
   setPreviewArrow: (from: Square, to: Square) => void
   clearPreviewArrow: () => void
+  setArrows: (arrows: ArrowState[]) => void
+  clearArrows: () => void
+  setHighlights: (highlights: HighlightState[]) => void
+  clearHighlights: () => void
   startDrag: (square: Square, x: number, y: number) => void
   updateDragPosition: (x: number, y: number) => void
   endDrag: (targetSquare: Square | null) => void
@@ -130,6 +138,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   focusCursorSquare: 'e1',
   legalMoves: [],
   previewArrow: null,
+  arrows: [],
+  highlights: [],
   displayedPvLine: null,
 
   draggedPiece: null,
@@ -260,6 +270,22 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   clearPreviewArrow: () => {
     set({ previewArrow: null })
+  },
+
+  setArrows: (arrows) => {
+    set({ arrows })
+  },
+
+  clearArrows: () => {
+    set({ arrows: [] })
+  },
+
+  setHighlights: (highlights) => {
+    set({ highlights })
+  },
+
+  clearHighlights: () => {
+    set({ highlights: [] })
   },
 
   startDrag: (square, x, y) => {

@@ -7,7 +7,7 @@ import { getSquareColor, squareToCoords } from '../lib/chessEngine'
 import Piece from './Piece'
 
 function ChessBoard() {
-  const { chess, orientation, draggedPiece, fen, previewArrow } = useGameStore()
+  const { chess, orientation, draggedPiece, fen, previewArrow, arrows, highlights } = useGameStore()
 
   useKeyboardController()
 
@@ -55,58 +55,63 @@ function ChessBoard() {
     </div>
   )
 
-  // Calculate arrow coordinates for preview move
-  const arrowElement = useMemo(() => {
-    console.log('[CHESSBOARD] previewArrow:', previewArrow)
-    if (!previewArrow) {
-      console.log('[CHESSBOARD] No preview arrow')
-      return null
-    }
+  // Helper function to calculate arrow coordinates
+  const calculateArrowCoords = (from: string, to: string) => {
+    const fromCoords = squareToCoords(from as SquareType)
+    const toCoords = squareToCoords(to as SquareType)
 
-    const { from, to } = previewArrow
-    console.log('[CHESSBOARD] Rendering arrow from', from, 'to', to)
-    const fromCoords = squareToCoords(from)
-    const toCoords = squareToCoords(to)
-
-    // Calculate pixel positions based on file and rank
-    // File: a=0, b=1, ..., h=7
-    // Rank: 1=7, 2=6, ..., 8=0 (bottom to top)
     const fromFile = fromCoords.file
-    const fromRank = 7 - fromCoords.rank // Flip rank (rank 1 is at bottom, rank 8 at top)
+    const fromRank = 7 - fromCoords.rank
     const toFile = toCoords.file
     const toRank = 7 - toCoords.rank
 
-    // Adjust for board orientation
     const isFlipped = orientation === 'b'
     const adjustedFromFile = isFlipped ? 7 - fromFile : fromFile
     const adjustedFromRank = isFlipped ? 7 - fromRank : fromRank
     const adjustedToFile = isFlipped ? 7 - toFile : toFile
     const adjustedToRank = isFlipped ? 7 - toRank : toRank
 
-    // Calculate pixel positions (center of squares)
     const fromX = adjustedFromFile * SQUARE_SIZE + SQUARE_SIZE / 2
     const fromY = adjustedFromRank * SQUARE_SIZE + SQUARE_SIZE / 2
     const toX = adjustedToFile * SQUARE_SIZE + SQUARE_SIZE / 2
     const toY = adjustedToRank * SQUARE_SIZE + SQUARE_SIZE / 2
-    
-    console.log('[CHESSBOARD] Arrow coords:', {
-      from, to,
-      fromCoords, toCoords,
-      adjustedFromFile, adjustedFromRank,
-      adjustedToFile, adjustedToRank,
-      fromX, fromY, toX, toY,
-      isFlipped
-    })
 
-    // Calculate arrow direction
     const dx = toX - fromX
     const dy = toY - fromY
     const angle = Math.atan2(dy, dx)
 
-    // Adjust line end to stop before reaching the square center (for better visual)
     const arrowHeadOffset = SQUARE_SIZE * 0.15
     const lineEndX = toX - arrowHeadOffset * Math.cos(angle)
     const lineEndY = toY - arrowHeadOffset * Math.sin(angle)
+
+    return { fromX, fromY, lineEndX, lineEndY }
+  }
+
+  // Render all arrows (both preview arrow and chat arrows)
+  const arrowElements = useMemo(() => {
+    const allArrows = []
+
+    // Add preview arrow (from engine)
+    if (previewArrow) {
+      allArrows.push({
+        id: 'preview-arrow',
+        from: previewArrow.from,
+        to: previewArrow.to,
+        color: '#3b82f6',
+      })
+    }
+
+    // Add chat-triggered arrows
+    arrows.forEach((arrow) => {
+      allArrows.push({
+        id: arrow.id,
+        from: arrow.from,
+        to: arrow.to,
+        color: arrow.color ?? '#00aa00',
+      })
+    })
+
+    if (allArrows.length === 0) return null
 
     return (
       <svg
@@ -120,36 +125,54 @@ function ChessBoard() {
         }}
       >
         <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="10"
-            markerHeight="10"
-            refX="9"
-            refY="3"
-            orient="auto"
-          >
-            <polygon
-              points="0 0, 10 3, 0 6"
-              fill="#3b82f6"
-              className="dark:fill-blue-400"
-            />
-          </marker>
+          {allArrows.map((arrow, idx) => (
+            <marker
+              key={`marker-${arrow.id}`}
+              id={`arrowhead-${idx}`}
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="3"
+              orient="auto"
+            >
+              <polygon
+                points="0 0, 10 3, 0 6"
+                fill={arrow.color}
+              />
+            </marker>
+          ))}
         </defs>
-        <line
-          x1={fromX}
-          y1={fromY}
-          x2={lineEndX}
-          y2={lineEndY}
-          stroke="#3b82f6"
-          strokeWidth="6"
-          strokeLinecap="round"
-          markerEnd="url(#arrowhead)"
-          className="dark:stroke-blue-400"
-          opacity="0.75"
-        />
+        {allArrows.map((arrow, idx) => {
+          const { fromX, fromY, lineEndX, lineEndY } = calculateArrowCoords(arrow.from, arrow.to)
+          return (
+            <line
+              key={arrow.id}
+              x1={fromX}
+              y1={fromY}
+              x2={lineEndX}
+              y2={lineEndY}
+              stroke={arrow.color}
+              strokeWidth="6"
+              strokeLinecap="round"
+              markerEnd={`url(#arrowhead-${idx})`}
+              opacity="0.75"
+            />
+          )
+        })}
       </svg>
     )
-  }, [previewArrow, orientation, SQUARE_SIZE])
+  }, [previewArrow, arrows, orientation, SQUARE_SIZE])
+
+  // Build a map of highlighted squares
+  const highlightMap = useMemo(() => {
+    const map = new Map<string, string>()
+    highlights.forEach((highlight) => {
+      highlight.squares.forEach((sq) => {
+        map.set(sq, highlight.color ?? '#ffd54f')
+      })
+    })
+    return map
+  }, [highlights])
 
   return (
     <div className="flex flex-col items-center">
@@ -157,10 +180,11 @@ function ChessBoard() {
         className="relative grid grid-cols-8 border-4 border-gray-800 dark:border-gray-200 shadow-2xl"
         style={{ width: SQUARE_SIZE * 8, height: SQUARE_SIZE * 8 }}
       >
-        {arrowElement}
+        {arrowElements}
         {squares.map((square) => {
           const piece = getPieceAt(square) || null
           const isLight = getSquareColor(square) === 'light'
+          const highlightColor = highlightMap.get(square)
 
           return (
             <Square
@@ -169,6 +193,7 @@ function ChessBoard() {
               piece={piece}
               isLight={isLight}
               size={SQUARE_SIZE}
+              highlightColor={highlightColor}
             />
           )
         })}
