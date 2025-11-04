@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { Chess, Square, PieceSymbol } from 'chess.js'
+import { PvLinePosition, fenToPvLineActions } from '../utils/pvLine'
 
 export type PlayerColor = 'w' | 'b'
 export type PieceType = 'p' | 'n' | 'b' | 'r' | 'q' | 'k'
@@ -31,6 +32,15 @@ interface GameState {
   selectedSquare: Square | null
   focusCursorSquare: Square | null
   legalMoves: Square[]
+  previewArrow: { from: Square; to: Square } | null
+  
+  // PV Line display
+  displayedPvLine: {
+    startFen: string
+    positions: PvLinePosition[]
+    originalFen: string // Original game FEN when line was shown
+    currentIndex: number
+  } | null
 
   // Drag state
   draggedPiece: { square: Square; x: number; y: number } | null
@@ -53,6 +63,8 @@ interface GameState {
   makeMove: (from: Square, to: Square, promotion?: PieceSymbol) => boolean
   selectSquare: (square: Square | null) => void
   setFocusCursor: (square: Square | null) => void
+  setPreviewArrow: (from: Square, to: Square) => void
+  clearPreviewArrow: () => void
   startDrag: (square: Square, x: number, y: number) => void
   updateDragPosition: (x: number, y: number) => void
   endDrag: (targetSquare: Square | null) => void
@@ -67,6 +79,13 @@ interface GameState {
   updateSettings: (settings: Partial<GameSettings>) => void
   importPGN: (pgn: string) => boolean
   exportPGN: () => string
+  
+  // PV Line display actions
+  showPvLine: (startFen: string, uciMoves: string[]) => void
+  hidePvLine: () => void
+  nextPvMove: () => void
+  prevPvMove: () => void
+  setPvMoveIndex: (index: number) => void
 }
 
 const initialSettings: GameSettings = {
@@ -110,6 +129,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   selectedSquare: null,
   focusCursorSquare: 'e1',
   legalMoves: [],
+  previewArrow: null,
+  displayedPvLine: null,
 
   draggedPiece: null,
 
@@ -147,11 +168,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       if (isPromotion && !promotion) {
         // Store pending promotion
-        set({
-          pendingPromotion: { from, to },
-          selectedSquare: null,
-          legalMoves: [],
-        })
+      set({
+        pendingPromotion: { from, to },
+        legalMoves: [],
+      })
         return false
       }
     }
@@ -176,6 +196,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         selectedSquare: null,
         legalMoves: [],
         pendingPromotion: null,
+        previewArrow: null, // Clear preview arrow when move is made
+        displayedPvLine: null, // Hide PV line when move is made
         ...status,
       })
 
@@ -232,6 +254,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ focusCursorSquare: square })
   },
 
+  setPreviewArrow: (from, to) => {
+    set({ previewArrow: { from, to } })
+  },
+
+  clearPreviewArrow: () => {
+    set({ previewArrow: null })
+  },
+
   startDrag: (square, x, y) => {
     const { chess } = get()
     const piece = chess.get(square)
@@ -244,7 +274,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       draggedPiece: { square, x, y },
       legalMoves: legalSquares,
-      selectedSquare: square,
     })
   },
 
@@ -267,7 +296,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       draggedPiece: null,
       legalMoves: [],
-      selectedSquare: null,
     })
   },
 
@@ -288,6 +316,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       selectedSquare: null,
       focusCursorSquare: 'e1',
       legalMoves: [],
+      previewArrow: null,
+      displayedPvLine: null,
       draggedPiece: null,
       pendingPromotion: null,
       ...status,
@@ -310,6 +340,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentPly: newPly,
       selectedSquare: null,
       legalMoves: [],
+      previewArrow: null,
+      displayedPvLine: null,
       ...status,
     })
   },
@@ -326,6 +358,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       chess: newChess,
       fen: targetFen,
       currentPly: currentPly + 1,
+      selectedSquare: null,
+      legalMoves: [],
+      previewArrow: null,
+      displayedPvLine: null,
       ...status,
     })
   },
@@ -344,6 +380,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentPly: ply,
       selectedSquare: null,
       legalMoves: [],
+      previewArrow: null,
+      displayedPvLine: null,
       ...status,
     })
   },
@@ -352,6 +390,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { pendingPromotion } = get()
     if (!pendingPromotion) return
 
+    // Clear preview arrow before confirming promotion
+    set({ previewArrow: null })
     get().makeMove(pendingPromotion.from, pendingPromotion.to, piece)
   },
 
@@ -384,6 +424,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         currentPly: newHistory.length,
         selectedSquare: null,
         legalMoves: [],
+        previewArrow: null,
+        displayedPvLine: null,
         ...status,
       })
 
@@ -391,6 +433,100 @@ export const useGameStore = create<GameState>((set, get) => ({
     } catch {
       return false
     }
+  },
+
+  showPvLine: (startFen, uciMoves) => {
+    const { fen } = get()
+    const positions = fenToPvLineActions(startFen, uciMoves)
+    
+    if (positions.length === 0) return
+    
+    // Set the displayed line
+    set({
+      displayedPvLine: {
+        startFen,
+        positions,
+        originalFen: fen,
+        currentIndex: 0,
+      },
+    })
+    
+    // Show the first position
+    get().setPvMoveIndex(0)
+  },
+
+  hidePvLine: () => {
+    const { displayedPvLine } = get()
+    
+    if (!displayedPvLine) return
+    
+    // Restore the original position
+    const originalChess = new Chess(displayedPvLine.originalFen)
+    const status = getGameStatus(originalChess)
+    
+    set({
+      displayedPvLine: null,
+      chess: originalChess,
+      fen: displayedPvLine.originalFen,
+      selectedSquare: null,
+      legalMoves: [],
+      previewArrow: null,
+      ...status,
+    })
+  },
+
+  nextPvMove: () => {
+    const { displayedPvLine } = get()
+    if (!displayedPvLine) return
+    
+    const maxIndex = displayedPvLine.positions.length - 1
+    const newIndex = Math.min(displayedPvLine.currentIndex + 1, maxIndex)
+    get().setPvMoveIndex(newIndex)
+  },
+
+  prevPvMove: () => {
+    const { displayedPvLine } = get()
+    if (!displayedPvLine) return
+    
+    const newIndex = Math.max(displayedPvLine.currentIndex - 1, 0)
+    get().setPvMoveIndex(newIndex)
+  },
+
+  setPvMoveIndex: (index) => {
+    const { displayedPvLine } = get()
+    if (!displayedPvLine) return
+    
+    const position = displayedPvLine.positions[index]
+    if (!position) return
+    
+    // Update the board to show this position
+    const chess = new Chess(position.fen)
+    const status = getGameStatus(chess)
+    
+    // Set preview arrow to show the next move (if we're not at the last position)
+    let previewArrow = null
+    if (index < displayedPvLine.positions.length - 1) {
+      const nextPosition = displayedPvLine.positions[index + 1]
+      if (nextPosition.moveFrom && nextPosition.moveTo) {
+        previewArrow = {
+          from: nextPosition.moveFrom as Square,
+          to: nextPosition.moveTo as Square,
+        }
+      }
+    }
+    
+    set({
+      displayedPvLine: {
+        ...displayedPvLine,
+        currentIndex: index,
+      },
+      chess,
+      fen: position.fen,
+      selectedSquare: null,
+      legalMoves: [],
+      previewArrow,
+      ...status,
+    })
   },
 
   exportPGN: () => {

@@ -112,9 +112,9 @@ function Controls() {
       <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
         <h3 className="font-semibold mb-2">Keyboard Controls</h3>
         <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Arrow Keys</kbd> - Move cursor</p>
-          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Enter/Space</kbd> - Select/Move piece</p>
-          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> - Cancel selection</p>
+          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Arrow Left/Right</kbd> - Navigate move history</p>
+          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Drag & Drop</kbd> - Move pieces</p>
+          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> - Cancel promotion</p>
         </div>
       </div>
     </div>

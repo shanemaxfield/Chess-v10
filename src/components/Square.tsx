@@ -13,23 +13,18 @@ interface SquareProps {
 
 const Square = memo(({ square, piece, isLight, size }: SquareProps) => {
   const {
-    selectedSquare,
-    focusCursorSquare,
-    legalMoves,
     draggedPiece,
+    legalMoves,
     isCheck,
     chess,
     moveHistory,
     currentPly,
-    selectSquare,
   } = useGameStore()
 
   const { handlePointerDown } = usePointerDrag()
 
-  const isSelected = selectedSquare === square
-  const isFocused = focusCursorSquare === square
-  const isLegalMove = legalMoves.includes(square)
   const isDragged = draggedPiece?.square === square
+  const isLegalMove = legalMoves.includes(square) && draggedPiece !== null
 
   // Check if this square is part of the last move
   const isLastMove = useMemo(() => {
@@ -56,7 +51,6 @@ const Square = memo(({ square, piece, isLight, size }: SquareProps) => {
     : 'bg-square-dark dark:bg-square-dark-dark'
 
   const highlightClasses = []
-  if (isSelected) highlightClasses.push('square-highlight-selected')
   if (isLegalMove) {
     if (piece) {
       highlightClasses.push('square-highlight-legal square-highlight-legal-capture')
@@ -66,18 +60,11 @@ const Square = memo(({ square, piece, isLight, size }: SquareProps) => {
   }
   if (isLastMove) highlightClasses.push('square-highlight-lastmove')
   if (isCheckSquare) highlightClasses.push('square-highlight-check')
-  if (isFocused) highlightClasses.push('focus-ring')
-
-  const handleClick = () => {
-    selectSquare(square)
-  }
 
   const handlePointerDownOnSquare = (e: React.PointerEvent) => {
+    // Only allow dragging pieces of the current player
     if (piece && piece.color === chess.turn()) {
       handlePointerDown(e, square)
-    } else {
-      // If clicking on an empty square or opponent piece, treat as move attempt
-      handleClick()
     }
   }
 
@@ -86,7 +73,6 @@ const Square = memo(({ square, piece, isLight, size }: SquareProps) => {
       data-square={square}
       className={`relative ${bgColor} ${highlightClasses.join(' ')} cursor-pointer select-none`}
       style={{ width: size, height: size }}
-      onClick={handleClick}
       onPointerDown={handlePointerDownOnSquare}
     >
       {piece && !isDragged && <Piece piece={piece} size={size * 0.9} />}

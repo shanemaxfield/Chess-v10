@@ -61,94 +61,30 @@ function handleEngineLine(line: string) {
   }
 }
 
-// Initialize Stockfish by creating a nested classic worker
+// Initialize Stockfish directly in this worker
 function initStockfish() {
   debug('Starting Stockfish initialization...')
 
   try {
-    // Create a blob with classic worker code that loads Stockfish
-    const workerCode = `
-      // This is a classic worker that can use importScripts
-      console.log('[NESTED WORKER] Loading Stockfish via importScripts...');
-      importScripts('/stockfish/stockfish-17.1-lite-single-03e3232.js');
-      console.log('[NESTED WORKER] importScripts completed');
-
-      let stockfishEngine = null;
-
-      // Initialize Stockfish
-      if (typeof Stockfish !== 'undefined') {
-        console.log('[NESTED WORKER] Found Stockfish function, calling it...');
-        const result = Stockfish();
-
-        if (result && typeof result.then === 'function') {
-          console.log('[NESTED WORKER] Stockfish() returned a promise, waiting...');
-          result.then((sf) => {
-            console.log('[NESTED WORKER] Stockfish promise resolved!');
-            stockfishEngine = sf;
-
-            // Set up message listener from Stockfish
-            sf.addMessageListener((line) => {
-              // Forward to parent worker
-              self.postMessage({ type: 'engineLine', data: line });
-            });
-
-            // Send ready signal
-            self.postMessage({ type: 'ready' });
-
-            // Send initial UCI command
-            sf.postMessage('uci');
-          }).catch((error) => {
-            console.error('[NESTED WORKER] Promise rejected:', error);
-            self.postMessage({ type: 'error', data: String(error) });
-          });
-        }
-      } else {
-        console.error('[NESTED WORKER] Stockfish not found!');
-        self.postMessage({ type: 'error', data: 'Stockfish not found' });
-      }
-
-      // Handle commands from parent worker
-      self.addEventListener('message', (e) => {
-        const { type, data } = e.data;
-        if (type === 'command' && stockfishEngine) {
-          stockfishEngine.postMessage(data);
-        }
-      });
-    `;
-
-    const blob = new Blob([workerCode], { type: 'application/javascript' })
-    const workerUrl = URL.createObjectURL(blob)
-
-    debug('Creating nested classic worker...')
-    const nestedWorker = new Worker(workerUrl)
-
-    nestedWorker.addEventListener('message', (e: MessageEvent) => {
-      const { type, data } = e.data
-
-      if (type === 'ready') {
-        debug('Nested worker reports Stockfish is ready')
-        engine = nestedWorker
-      } else if (type === 'engineLine') {
-        handleEngineLine(data)
-      } else if (type === 'error') {
-        debug(`Nested worker error: ${data}`)
-        self.postMessage({ type: 'error', data: `Nested worker failed: ${data}` })
-      }
-    })
-
-    nestedWorker.addEventListener('error', (e: ErrorEvent) => {
-      debug(`Nested worker error event: ${e.message}`)
-      self.postMessage({ type: 'error', data: `Nested worker error: ${e.message}` })
-    })
-
-    // Override engine.postMessage to send to nested worker
-    engine = {
-      postMessage: (cmd: string) => {
-        nestedWorker.postMessage({ type: 'command', data: cmd })
-      }
-    }
-
-    debug('Nested worker created successfully')
+    // Load Stockfish script using fetch and eval
+    debug('Loading Stockfish script...')
+    
+    fetch(`${self.location.origin}/stockfish/stockfish-17.1-lite-single-03e3232.js`)
+      .then(response => response.text())
+      .then(scriptText => {
+        debug('Stockfish script fetched, evaluating...')
+        
+        // Create a function that will execute the script in the right context
+        const scriptFunction = new Function(scriptText)
+        scriptFunction()
+        
+        debug('Stockfish script evaluated')
+        initializeStockfishEngine()
+      })
+      .catch(error => {
+        debug(`Failed to fetch Stockfish script: ${error}`)
+        self.postMessage({ type: 'error', data: 'Failed to fetch Stockfish script' })
+      })
 
   } catch (error) {
     debug(`Exception in initStockfish: ${error}`)
@@ -156,6 +92,134 @@ function initStockfish() {
       type: 'error',
       data: `Failed to load Stockfish: ${error}`,
     })
+  }
+}
+
+function initializeStockfishEngine() {
+  debug('Initializing Stockfish engine...')
+  
+  // Try to find the Stockfish function
+  let StockfishFunction = null
+  
+  // Check different ways the function might be exposed
+  if (typeof Stockfish !== 'undefined') {
+    StockfishFunction = Stockfish
+    debug('Found Stockfish on global scope')
+  } else if (typeof self.Stockfish !== 'undefined') {
+    StockfishFunction = self.Stockfish
+    debug('Found Stockfish on self scope')
+  } else {
+    debug('Stockfish not found, checking available globals...')
+    debug('Available globals:', Object.keys(self))
+    
+    // Check if the script created any global variables
+    debug('Checking for any new globals after script execution...')
+    const allGlobals = Object.keys(self)
+    debug('All globals after script:', allGlobals)
+    
+    // Look for any function that might be Stockfish
+    const possibleFunctions = allGlobals.filter(key => 
+      typeof self[key] === 'function' && 
+      (key.toLowerCase().includes('stockfish') || key === 'e' || key.length === 1)
+    )
+    
+    debug('Possible Stockfish functions:', possibleFunctions)
+    
+    // Also check if there are any properties on self that might contain the function
+    for (const key of allGlobals) {
+      if (typeof self[key] === 'object' && self[key] !== null) {
+        debug(`Checking object ${key}:`, Object.keys(self[key]))
+        if (typeof self[key].Stockfish === 'function') {
+          StockfishFunction = self[key].Stockfish
+          debug(`Found Stockfish in object ${key}`)
+          break
+        }
+      }
+    }
+    
+    if (possibleFunctions.length > 0 && !StockfishFunction) {
+      StockfishFunction = self[possibleFunctions[0]]
+      debug(`Using function: ${possibleFunctions[0]}`)
+    }
+  }
+  
+  if (!StockfishFunction) {
+    debug('No Stockfish function found')
+    self.postMessage({ type: 'error', data: 'Stockfish function not found' })
+    return
+  }
+  
+  debug('Calling Stockfish function...')
+  
+  // Test WASM file accessibility
+  const wasmUrl = `${self.location.origin}/stockfish/stockfish-17.1-lite-single-03e3232.wasm`
+  debug(`Testing WASM file accessibility: ${wasmUrl}`)
+  
+  fetch(wasmUrl)
+    .then(response => {
+      debug(`WASM fetch response status: ${response.status}`)
+      debug(`WASM fetch response headers:`, Object.fromEntries(response.headers.entries()))
+      return response.arrayBuffer()
+    })
+    .then(buffer => {
+      debug(`WASM file size: ${buffer.byteLength} bytes`)
+      debug(`WASM file first 4 bytes:`, Array.from(new Uint8Array(buffer.slice(0, 4))))
+    })
+    .catch(error => {
+      debug(`WASM file test failed: ${error}`)
+    })
+  
+  // Configure Stockfish
+  const stockfishConfig = {
+    locateFile: function(path) {
+      debug(`locateFile called with path: ${path}`)
+      let resolvedPath
+      
+      if (path.endsWith('.wasm')) {
+        resolvedPath = `${self.location.origin}/stockfish/stockfish-17.1-lite-single-03e3232.wasm`
+        debug(`Resolved WASM path: ${resolvedPath}`)
+      } else if (path.endsWith('.js')) {
+        resolvedPath = `${self.location.origin}/stockfish/stockfish-17.1-lite-single-03e3232.js`
+        debug(`Resolved JS path: ${resolvedPath}`)
+      } else {
+        resolvedPath = `${self.location.origin}/stockfish/${path}`
+        debug(`Resolved other path: ${resolvedPath}`)
+      }
+      
+      return resolvedPath
+    }
+  }
+  
+  try {
+    const result = StockfishFunction(stockfishConfig)
+    
+    if (result && typeof result.then === 'function') {
+      debug('Stockfish returned a promise, waiting...')
+      result.then((sf) => {
+        debug('Stockfish promise resolved!')
+        engine = sf
+        
+        // Set up message listener
+        sf.addMessageListener((line) => {
+          handleEngineLine(line)
+        })
+        
+        // Send ready signal
+        self.postMessage({ type: 'ready' })
+        
+        // Send initial UCI command
+        sf.postMessage('uci')
+      }).catch((error) => {
+        debug(`Stockfish promise rejected: ${error}`)
+        self.postMessage({ type: 'error', data: String(error) })
+      })
+    } else {
+      debug('Stockfish did not return a promise')
+      self.postMessage({ type: 'error', data: 'Stockfish did not return a promise' })
+    }
+  } catch (error) {
+    debug(`Error calling Stockfish function: ${error}`)
+    self.postMessage({ type: 'error', data: String(error) })
   }
 }
 

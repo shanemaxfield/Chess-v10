@@ -52,6 +52,33 @@ function App() {
   }
 
   const isWhiteToMove = chess.turn() === 'w'
+  const setPreviewArrow = useGameStore((state) => state.setPreviewArrow)
+  const clearPreviewArrow = useGameStore((state) => state.clearPreviewArrow)
+
+  // Handle PV preview - show arrow for the first move of the PV line
+  const handlePreviewPv = (movesUci: string[]) => {
+    console.log('[APP] handlePreviewPv called with moves:', movesUci)
+    if (movesUci.length === 0) {
+      clearPreviewArrow()
+      return
+    }
+
+    // Extract the first move from the PV line
+    const firstMove = movesUci[0]
+    console.log('[APP] First move:', firstMove)
+    if (firstMove && firstMove.length >= 4) {
+      const from = firstMove.substring(0, 2) as any
+      const to = firstMove.substring(2, 4) as any
+      console.log('[APP] Setting preview arrow from', from, 'to', to)
+      setPreviewArrow(from, to)
+    } else {
+      console.log('[APP] Invalid move format:', firstMove)
+    }
+  }
+
+  const handleClearPreview = () => {
+    clearPreviewArrow()
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -69,6 +96,8 @@ function App() {
             engine={engine}
             isWhiteToMove={isWhiteToMove}
             onUseBestMove={handleUseBestMove}
+            onPreviewPv={handlePreviewPv}
+            onClearPreview={handleClearPreview}
           />
         </aside>
       </main>
