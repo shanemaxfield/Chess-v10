@@ -9,9 +9,10 @@ interface SquareProps {
   piece: ChessPiece | null
   isLight: boolean
   size: number
+  highlightColor?: string
 }
 
-const Square = memo(({ square, piece, isLight, size }: SquareProps) => {
+const Square = memo(({ square, piece, isLight, size, highlightColor }: SquareProps) => {
   const {
     draggedPiece,
     legalMoves,
@@ -72,7 +73,11 @@ const Square = memo(({ square, piece, isLight, size }: SquareProps) => {
     <div
       data-square={square}
       className={`relative ${bgColor} ${highlightClasses.join(' ')} cursor-pointer select-none`}
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        ...(highlightColor ? { backgroundColor: highlightColor } : {})
+      }}
       onPointerDown={handlePointerDownOnSquare}
     >
       {piece && !isDragged && <Piece piece={piece} size={size * 0.9} />}
