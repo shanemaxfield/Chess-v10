@@ -208,6 +208,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         pendingPromotion: null,
         previewArrow: null, // Clear preview arrow when move is made
         displayedPvLine: null, // Hide PV line when move is made
+        arrows: [], // Clear all arrows when move is made
+        highlights: [], // Clear all highlights when move is made
         ...status,
       })
 

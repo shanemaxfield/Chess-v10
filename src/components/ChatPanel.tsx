@@ -15,6 +15,7 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([])
   const [messageIdCounter, setMessageIdCounter] = useState(0)
 
+  const chess = useGameStore((state) => state.chess)
   const makeMove = useGameStore((state) => state.makeMove)
   const arrows = useGameStore((state) => state.arrows)
   const setArrows = useGameStore((state) => state.setArrows)
@@ -35,12 +36,12 @@ export default function ChatPanel() {
     setMessageIdCounter((prev) => prev + 1)
 
     // Plan actions based on input
-    const plan = planActions(input)
+    const plan = planActions(input, chess)
 
     // Execute the plan
     let responseText = 'No actions matched.'
 
-    // 1) Apply moves
+    // 1) Apply moves (arrows and highlights are automatically cleared by makeMove)
     if (plan.moves && plan.moves.length > 0) {
       for (const move of plan.moves) {
         const success = makeMove(move.from as any, move.to as any, move.promotion)
@@ -85,7 +86,7 @@ export default function ChatPanel() {
       <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
         <h3 className="font-semibold text-gray-900 dark:text-gray-100">Chat Actions</h3>
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-          Try: "move e2 to e4", "arrow b1 to c3", "highlight f7 and h7"
+          Try: "bc8", "e4", "arrow from b6 to c2", "highlight f7 and h7"
         </p>
       </div>
 
