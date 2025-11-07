@@ -4,6 +4,14 @@ A production-ready, fully functional web chess application built with React, Typ
 
 ## Features
 
+### AI Chess Assistant ⭐ **NEW**
+- **Natural Language Interface**: Control the board with conversational commands
+- **Real-time Board Actions**: Moves, arrows, and highlights execute instantly
+- **Smart Suggestions**: Get best move recommendations with visual indicators
+- **Interactive Chat**: Follow-up suggestions and explanations
+- **Dual-response Format**: Board actions + friendly chat messages
+- **Powered by OpenAI GPT-4**: Understands chess strategy and tactics
+
 ### Core Functionality
 - **Complete Chess Rules**: All standard chess rules implemented via chess.js
   - Legal move validation
@@ -90,6 +98,61 @@ npm run typecheck
 npm run check
 ```
 
+## LLM Chess Assistant Setup
+
+The app includes an AI chess assistant powered by OpenAI's GPT models. The assistant can:
+- Make moves via natural language (e.g., "play e4", "move knight to f3")
+- Suggest best moves with visual arrows
+- Highlight important squares
+- Explain positions and strategies
+- Provide follow-up suggestions
+
+### Setup Instructions
+
+1. **Create a `.env` file** in the project root:
+
+```bash
+cp .env.example .env
+```
+
+2. **Add your OpenAI API key** to the `.env` file:
+
+```env
+VITE_OPENAI_API_KEY=your-actual-api-key-here
+```
+
+3. **Restart the dev server** if it's already running:
+
+```bash
+npm run dev
+```
+
+### Using the AI Assistant
+
+1. Look for the **Chat Actions** panel with the 🤖 robot icon
+2. Type natural language queries like:
+   - "e4" - Makes the e4 move
+   - "What's the best move?" - Shows suggested moves with arrows
+   - "Show me where my knight can go" - Highlights legal squares
+   - "Explain this position" - Gets strategic advice
+3. Click on **follow-up suggestions** to continue the conversation
+4. Toggle between **AI mode** and **Basic mode** using the button in the header
+
+### Features
+
+- **Dual-response format**: Board actions + chat response
+- **Real-time board control**: Moves execute immediately
+- **Visual annotations**: Arrows and highlights for clarity
+- **Follow-up suggestions**: Interactive quick-reply buttons
+- **Backward compatible**: Falls back to basic parser if LLM unavailable
+
+### Note on API Keys
+
+⚠️ The API key is used client-side. For production, consider:
+- Using a backend proxy to hide the API key
+- Implementing rate limiting
+- Setting usage quotas in your OpenAI account
+
 ## Keyboard Controls
 
 The app is fully accessible via keyboard:
@@ -120,7 +183,7 @@ When a pawn reaches the promotion rank:
 ## Project Structure
 
 ```
-Chess-v3/
+Chess-v10/
 ├── src/
 │   ├── components/           # React components
 │   │   ├── ChessBoard.tsx   # Main board component
@@ -131,6 +194,7 @@ Chess-v3/
 │   │   ├── PromotionModal.tsx
 │   │   ├── Controls.tsx     # Game controls
 │   │   ├── EnginePanel.tsx  # Stockfish analysis panel
+│   │   ├── ChatPanel.tsx    # AI chess assistant chat (NEW)
 │   │   └── TopBar.tsx       # Header with theme toggle
 │   ├── engine/              # Stockfish integration
 │   │   ├── stockfish.worker.ts  # Web Worker wrapper
@@ -142,8 +206,17 @@ Chess-v3/
 │   │   └── gameStore.ts     # Zustand store (game state)
 │   ├── lib/                 # Utilities
 │   │   ├── chessEngine.ts   # Chess.js wrapper
+│   │   ├── llmService.ts    # OpenAI LLM integration (NEW)
 │   │   ├── sound.ts         # Sound effects
-│   │   └── theme.ts         # Theme utilities
+│   │   ├── theme.ts         # Theme utilities
+│   │   └── actions/         # Chat action system (NEW)
+│   │       ├── types.ts     # Action type definitions
+│   │       ├── planActions.ts    # Parse commands to actions
+│   │       ├── MoveController.ts
+│   │       ├── ArrowController.ts
+│   │       └── HighlightController.ts
+│   ├── config/              # Configuration (NEW)
+│   │   └── llmConfig.ts     # LLM settings
 │   ├── utils/               # Helper utilities
 │   │   ├── uci.ts           # UCI protocol parsing
 │   │   └── eval.ts          # Evaluation formatting
@@ -160,6 +233,7 @@ Chess-v3/
 │   └── stockfish/           # Stockfish WASM files
 │       ├── stockfish-17.1-lite-single-03e3232.js
 │       └── stockfish-17.1-lite-single-03e3232.wasm
+├── .env.example             # Environment variables template (NEW)
 ├── index.html
 ├── package.json
 ├── tsconfig.json
@@ -177,6 +251,7 @@ Chess-v3/
 - **State Management**: Zustand 4
 - **Chess Logic**: chess.js 1.0.0-beta.8
 - **Engine**: Stockfish 17.1 (WASM)
+- **AI Assistant**: OpenAI GPT-4 (via OpenAI SDK)
 - **Testing**: Vitest + React Testing Library
 - **Linting**: ESLint
 
