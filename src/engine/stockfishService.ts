@@ -137,8 +137,9 @@ class StockfishService {
     this.debug(`Processing engine line: ${line}`)
 
     if (line === 'uciok') {
-      this.debug('Received uciok, sending isready')
-      this.worker?.postMessage({ type: 'init' })
+      this.debug('Received uciok, engine UCI protocol initialized')
+      // Don't send init here - init() method will be called by useStockfish hook
+      // and will send the init message with options
     } else if (line === 'readyok') {
       if (!this.state.ready) {
         this.debug('Engine is ready!')
@@ -189,17 +190,19 @@ class StockfishService {
   }
 
   public init(options?: StockfishOptions) {
-    if (!this.state.ready) {
-      this.debug('Engine not ready yet')
-      // Queue options to be set once ready
-      setTimeout(() => this.init(options), 50)
+    // Always send init message to worker - it will start loading Stockfish if not already loaded
+    // The worker handles the case where engine isn't ready yet
+    if (!this.worker) {
+      this.debug('Worker not created yet, will retry init')
+      setTimeout(() => this.init(options), 100)
       return
     }
+    
     const { multiPv = 3, threads = 1, skill } = options || {}
     // Don't set skill level for deterministic analysis (removes randomness)
     // Skill level introduces variability in recommendations
-    this.debug(`Setting options: MultiPV=${multiPv}, Threads=${threads}${skill !== undefined ? `, Skill=${skill}` : ''}`)
-    this.worker?.postMessage({ type: 'init', data: { multiPv, threads, skill } })
+    this.debug(`Sending init to worker: MultiPV=${multiPv}, Threads=${threads}${skill !== undefined ? `, Skill=${skill}` : ''}`)
+    this.worker.postMessage({ type: 'init', payload: { multiPv, threads, skill } })
   }
 
   public setPosition(fen: string) {

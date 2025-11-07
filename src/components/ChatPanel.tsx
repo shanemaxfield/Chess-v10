@@ -38,17 +38,25 @@ export default function ChatPanel() {
     // Plan actions based on input
     const plan = planActions(input, chess)
 
-    // Execute the plan
-    let responseText = 'No actions matched.'
+    // Execute the plan and build response
+    const actions: string[] = []
+    let responseText = 'I didn\'t understand that command. Try a move like "e4" or "bc8", or draw an arrow with "arrow from b2 to b4".'
 
     // 1) Apply moves (arrows and highlights are automatically cleared by makeMove)
     if (plan.moves && plan.moves.length > 0) {
       for (const move of plan.moves) {
+        const piece = chess.get(move.from as any)
+        const pieceName = piece ? 
+          (piece.type === 'p' ? 'pawn' : 
+           piece.type === 'n' ? 'knight' : 
+           piece.type === 'b' ? 'bishop' : 
+           piece.type === 'r' ? 'rook' : 
+           piece.type === 'q' ? 'queen' : 'king') : 'piece'
         const success = makeMove(move.from as any, move.to as any, move.promotion)
         if (success) {
-          responseText = `Executed move: ${move.from} → ${move.to}`
+          actions.push(`Moved ${pieceName} from ${move.from} to ${move.to}`)
         } else {
-          responseText = `Failed to execute move: ${move.from} → ${move.to}`
+          actions.push(`Could not move ${pieceName} from ${move.from} to ${move.to} (illegal move)`)
         }
       }
     }
@@ -57,14 +65,28 @@ export default function ChatPanel() {
     if (plan.arrows && plan.arrows.length > 0) {
       const newArrows = reconcileArrows(arrows, plan.arrows)
       setArrows(newArrows)
-      responseText = `Added ${plan.arrows.length} arrow(s)`
+      plan.arrows.forEach(arrow => {
+        actions.push(`Drew arrow from ${arrow.from} to ${arrow.to}`)
+      })
     }
 
     // 3) Apply highlights
     if (plan.highlights && plan.highlights.length > 0) {
       const newHighlights = reconcileHighlights(highlights, plan.highlights)
       setHighlights(newHighlights)
-      responseText = `Highlighted ${plan.highlights.reduce((acc, h) => acc + h.squares.length, 0)} square(s)`
+      plan.highlights.forEach(highlight => {
+        const squaresList = highlight.squares.join(', ')
+        actions.push(`Highlighted square${highlight.squares.length > 1 ? 's' : ''}: ${squaresList}`)
+      })
+    }
+
+    // Build complete response message
+    if (actions.length > 0) {
+      if (actions.length === 1) {
+        responseText = `Done! ${actions[0]}.`
+      } else {
+        responseText = `Done! I've completed ${actions.length} actions:\n${actions.map((a, i) => `${i + 1}. ${a}`).join('\n')}`
+      }
     }
 
     // Add assistant response
@@ -103,7 +125,7 @@ export default function ChatPanel() {
               className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
+                className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
                   msg.isUser
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'

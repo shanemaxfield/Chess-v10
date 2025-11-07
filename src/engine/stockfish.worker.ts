@@ -69,8 +69,21 @@ function initStockfish() {
     // Load Stockfish script using fetch and eval
     debug('Loading Stockfish script...')
     
-    fetch(`${self.location.origin}/stockfish/stockfish-17.1-lite-single-03e3232.js`)
-      .then(response => response.text())
+    // Get the correct origin - use import.meta.url if available, otherwise self.location
+    const origin = typeof import.meta !== 'undefined' && import.meta.url 
+      ? new URL(import.meta.url).origin 
+      : (self.location?.origin || window?.location?.origin || '')
+    
+    const stockfishUrl = `${origin}/stockfish/stockfish-17.1-lite-single-03e3232.js`
+    debug(`Fetching Stockfish from: ${stockfishUrl}`)
+    
+    fetch(stockfishUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        return response.text()
+      })
       .then(scriptText => {
         debug('Stockfish script fetched, evaluating...')
         
@@ -83,7 +96,7 @@ function initStockfish() {
       })
       .catch(error => {
         debug(`Failed to fetch Stockfish script: ${error}`)
-        self.postMessage({ type: 'error', data: 'Failed to fetch Stockfish script' })
+        self.postMessage({ type: 'error', data: `Failed to fetch Stockfish script: ${error.message || error}` })
       })
 
   } catch (error) {

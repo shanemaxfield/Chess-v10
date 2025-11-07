@@ -147,13 +147,6 @@ function EnginePanel({
         </div>
       )}
 
-      {/* Best Move */}
-      {engine.bestMove && !engine.thinking && (
-        <div className="mb-4 p-3 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
-          <strong>Best move:</strong> {engine.bestMove}
-        </div>
-      )}
-
       {/* PV Lines */}
       <div className="flex-1 overflow-y-auto mb-4">
         {engine.lines.length === 0 && !engine.thinking ? (
