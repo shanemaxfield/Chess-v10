@@ -5,6 +5,7 @@ import { reconcileArrows } from '../lib/actions/ArrowController'
 import { reconcileHighlights } from '../lib/actions/HighlightController'
 import { initializeLLMService, getLLMService } from '../lib/llmService'
 import { LLM_CONFIG } from '../config/llmConfig'
+import { UseStockfishReturn } from '../engine/useStockfish'
 
 interface Message {
   id: number
@@ -13,7 +14,11 @@ interface Message {
   followUps?: string[]
 }
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  engine: UseStockfishReturn
+}
+
+export default function ChatPanel({ engine }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [messageIdCounter, setMessageIdCounter] = useState(0)
@@ -113,7 +118,7 @@ export default function ChatPanel() {
         // Use LLM service
         const llmService = getLLMService()
         if (llmService) {
-          const result = await llmService.processMessage(userInput, chess)
+          const result = await llmService.processMessage(userInput, chess, engine.lines)
           executePlan(result.plan, result.response)
           responseText = result.response
           followUps = result.followUps

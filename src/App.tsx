@@ -92,7 +92,7 @@ function App() {
         <aside className="lg:w-80 flex flex-col gap-6">
           <MoveList />
           <div className="h-96">
-            <ChatPanel />
+            <ChatPanel engine={engine} />
           </div>
         </aside>
         <aside className="lg:w-96 flex flex-col">

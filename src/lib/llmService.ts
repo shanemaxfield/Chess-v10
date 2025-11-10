@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
 import { Chess } from 'chess.js';
 import { ActionPlan } from './actions/types';
+import { PvLine } from '../engine/stockfishService';
+import { formatScore } from '../utils/eval';
 
 export interface LLMResponse {
   board_actions: {
@@ -62,6 +64,21 @@ USER CONTEXT:
 - Current position is provided as FEN notation
 - Legal moves are provided to help you validate
 - User can make moves, draw arrows, or highlight squares through natural language
+- Stockfish engine analysis lines may be provided (if available)
+
+STOCKFISH LINES:
+- If Stockfish analysis lines are provided, you can reference them when users ask about:
+  - "show me the top stockfish line" / "show me line 1" → Show Line 1 (best line)
+  - "show me the top 2 lines" / "show me lines 1 and 2" → Show Lines 1 and 2
+  - "show me the top 3 lines" → Show Lines 1, 2, and 3
+  - "what does stockfish recommend" → Reference the best line
+  - "show me stockfish analysis" → Show all available lines
+- When showing Stockfish lines, use arrows to visualize the moves:
+  - Line 1 (best): Use green arrows
+  - Line 2: Use blue arrows
+  - Line 3: Use yellow arrows
+- Format: Each line shows moves in UCI format (e.g., "e2e4 e7e5") and evaluation score
+- If no Stockfish lines are available, inform the user that analysis is not ready
 
 EXAMPLES:
 
@@ -101,6 +118,35 @@ User: "Show me where my bishop can go"
   "chat_response": {
     "message": "I've highlighted all squares your bishop can reach. Bc4 is a strong option!",
     "follow_ups": ["Play Bc4", "Why is Bc4 good?", "Show other piece moves"]
+  }
+}
+
+User: "show me the top stockfish line" (when Stockfish lines are available)
+{
+  "board_actions": {
+    "arrows": [{"from": "e2", "to": "e4", "color": "green"}, {"from": "e7", "to": "e5", "color": "green"}],
+    "clear_previous": true
+  },
+  "chat_response": {
+    "message": "Here's Stockfish's top line: e4 e5 (+0.5 at depth 20). This is the best move according to the engine.",
+    "follow_ups": ["Show me the top 2 lines", "Play this move", "Explain why this is best"]
+  }
+}
+
+User: "show me the top 2 lines" (when Stockfish lines are available)
+{
+  "board_actions": {
+    "arrows": [
+      {"from": "e2", "to": "e4", "color": "green"},
+      {"from": "e7", "to": "e5", "color": "green"},
+      {"from": "d2", "to": "d4", "color": "blue"},
+      {"from": "d7", "to": "d5", "color": "blue"}
+    ],
+    "clear_previous": true
+  },
+  "chat_response": {
+    "message": "Showing Stockfish's top 2 lines: Line 1 (green): e4 e5 (+0.5). Line 2 (blue): d4 d5 (+0.3).",
+    "follow_ups": ["Show me all 3 lines", "Play line 1", "What's the difference?"]
   }
 }`;
 
@@ -194,21 +240,50 @@ export class ChessLLMService {
   }
 
   /**
+   * Format Stockfish lines for the prompt
+   */
+  private formatStockfishLines(lines: PvLine[], isWhiteToMove: boolean): string {
+    if (!lines || lines.length === 0) {
+      return 'No Stockfish analysis available yet.';
+    }
+
+    return lines.map((line, index) => {
+      const scoreStr = formatScore(line.score, isWhiteToMove, true);
+      const uciMoves = line.pv.slice(0, 10); // First 10 moves in UCI format
+      const sanMoves = line.san && line.san.length > 0 
+        ? line.san.slice(0, 10).join(' ') 
+        : null;
+      const depthStr = line.depth ? `depth ${line.depth}` : '';
+      const movesDisplay = sanMoves ? `${sanMoves} (UCI: ${uciMoves.join(' ')})` : uciMoves.join(' ');
+      return `Line ${line.multipv} (${index === 0 ? 'Best' : `#${line.multipv}`}): Score ${scoreStr}, ${depthStr}, Moves: ${movesDisplay}${line.pv.length > 10 ? '...' : ''}`;
+    }).join('\n');
+  }
+
+  /**
    * Process user message with LLM
    */
   async processMessage(
     userMessage: string,
-    chess: Chess
+    chess: Chess,
+    stockfishLines?: PvLine[]
   ): Promise<{ plan: ActionPlan; response: string; followUps?: string[] }> {
     try {
       const fen = chess.fen();
       const legalMoves = this.getLegalMovesUCI(chess);
       const turn = chess.turn() === 'w' ? 'White' : 'Black';
       const moveNumber = chess.moveNumber();
+      const isWhiteToMove = chess.turn() === 'w';
+
+      let stockfishInfo = '';
+      if (stockfishLines && stockfishLines.length > 0) {
+        stockfishInfo = `\n\nCurrent Stockfish Analysis:\n${this.formatStockfishLines(stockfishLines, isWhiteToMove)}`;
+      } else {
+        stockfishInfo = '\n\nStockfish Analysis: Not available (engine may still be analyzing or not ready).';
+      }
 
       const userPrompt = `Current Position (FEN): ${fen}
 Turn: ${turn} to move (move #${moveNumber})
-Legal Moves (UCI format): ${legalMoves.slice(0, 20).join(', ')}${legalMoves.length > 20 ? '...' : ''}
+Legal Moves (UCI format): ${legalMoves.slice(0, 20).join(', ')}${legalMoves.length > 20 ? '...' : ''}${stockfishInfo}
 
 User Request: "${userMessage}"
 
