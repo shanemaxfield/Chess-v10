@@ -105,10 +105,10 @@ function EnginePanel({
 
   if (!engine.ready) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+      <div className="panel-elegant p-6">
         <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-3 text-gray-600 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+          <span className="ml-3 text-stone-600 dark:text-stone-400">
             Loading Stockfish engine...
           </span>
         </div>
@@ -117,9 +117,9 @@ function EnginePanel({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex flex-col h-full">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+    <div className="panel-elegant p-5 flex flex-col h-full">
+      <div className="flex items-center gap-2 mb-4 pb-4 border-b border-stone-200 dark:border-stone-700">
+        <svg className="w-5 h-5 text-stone-600 dark:text-stone-400" fill="currentColor" viewBox="0 0 20 20">
           <path d="M13 7H7v6h6V7z" />
           <path
             fillRule="evenodd"
@@ -127,30 +127,31 @@ function EnginePanel({
             clipRule="evenodd"
           />
         </svg>
-        Engine Analysis
-      </h2>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+          Engine Analysis
+        </h2>
+      </div>
 
       {engine.error && (
-        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded">
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800 text-sm">
           {engine.error}
         </div>
       )}
 
       {/* Status */}
       {engine.thinking && (
-        <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <span>
-            Engine thinking... Depth:{' '}
-            {engine.lines[0]?.depth || 0}
+        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 rounded-lg flex items-center gap-2 border border-amber-200 dark:border-amber-800">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+          <span className="text-sm">
+            Analyzing... Depth {engine.lines[0]?.depth || 0}
           </span>
         </div>
       )}
 
       {/* PV Lines */}
-      <div className="flex-1 overflow-y-auto mb-4">
+      <div className="flex-1 overflow-y-auto mb-4 elegant-scrollbar">
         {engine.lines.length === 0 && !engine.thinking ? (
-          <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">
+          <p className="text-stone-500 dark:text-stone-400 text-sm text-center py-8">
             Analysis will start automatically when position changes
           </p>
         ) : (
@@ -160,73 +161,73 @@ function EnginePanel({
               const isActiveLine = displayedPvLine && expandedPvIndex === index
               const currentMoveIndex = isActiveLine ? displayedPvLine.currentIndex : null
               const totalMoves = isActiveLine ? displayedPvLine.positions.length : null
-              
+
               return (
                 <div
                   key={line.multipv}
-                  className={`rounded transition-colors ${
+                  className={`rounded-lg transition-all border ${
                     selectedPvIndex === index
-                      ? 'bg-blue-200 dark:bg-blue-800'
-                      : 'bg-gray-100 dark:bg-gray-700'
+                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'
+                      : 'bg-stone-50 dark:bg-stone-800/50 border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   <div
                     onClick={() => handlePvClick(line, index)}
-                    className="p-2.5 cursor-pointer flex items-center justify-between gap-3 hover:bg-opacity-80"
+                    className="p-3 cursor-pointer flex items-center justify-between gap-3 hover:bg-opacity-80"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <span
-                        className={`font-mono font-bold text-lg whitespace-nowrap ${
+                        className={`font-mono font-bold text-base whitespace-nowrap ${
                           line.score.type === 'mate'
                             ? 'text-red-600 dark:text-red-400'
                             : line.score.value > 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-blue-600 dark:text-blue-400'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-amber-600 dark:text-amber-400'
                         }`}
                       >
                         {formatScore(line.score, isWhiteToMove, true)}
                       </span>
-                      <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      <div className="text-sm text-stone-700 dark:text-stone-300 truncate">
                         {line.san && line.san.length > 0 ? (
                           <span>{line.san.slice(0, 10).join(' ')}</span>
                         ) : (
-                          <span className="text-gray-500">
+                          <span className="text-stone-500">
                             {line.pv.slice(0, 10).join(' ')}
                           </span>
                         )}
                         {line.pv.length > 10 && (
-                          <span className="text-gray-500 dark:text-gray-400">...</span>
+                          <span className="text-stone-500 dark:text-stone-400">...</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {line.depth}
+                      <span className="text-xs text-stone-500 dark:text-stone-400 whitespace-nowrap bg-stone-100 dark:bg-stone-700 px-2 py-0.5 rounded">
+                        d{line.depth}
                       </span>
                       <button
                         onClick={(e) => handleTogglePvLine(line, index, e)}
-                        className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                        className="px-2 py-1 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded transition-colors"
                         title={isExpanded ? "Hide line" : "Show line"}
                       >
                         {isExpanded ? '▼' : '▶'}
                       </button>
                     </div>
                   </div>
-                  
+
                   {isExpanded && isActiveLine && totalMoves !== null && (
-                    <div className="px-2.5 pb-2.5 border-t border-gray-300 dark:border-gray-600 pt-2 flex items-center justify-between gap-2">
+                    <div className="px-3 pb-3 border-t border-stone-200 dark:border-stone-600 pt-2 flex items-center justify-between gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           prevPvMove()
                         }}
                         disabled={currentMoveIndex === 0}
-                        className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 text-xs btn-secondary"
                       >
                         ◀ Prev
                       </button>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        Move {currentMoveIndex !== null ? currentMoveIndex + 1 : 0} / {totalMoves}
+                      <span className="text-xs text-stone-600 dark:text-stone-400 font-medium">
+                        {currentMoveIndex !== null ? currentMoveIndex + 1 : 0} / {totalMoves}
                       </span>
                       <button
                         onClick={(e) => {
@@ -234,7 +235,7 @@ function EnginePanel({
                           nextPvMove()
                         }}
                         disabled={currentMoveIndex !== null && currentMoveIndex >= totalMoves - 1}
-                        className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 text-xs btn-secondary"
                       >
                         Next ▶
                       </button>
@@ -248,11 +249,11 @@ function EnginePanel({
       </div>
 
       {/* Settings */}
-      <div className="space-y-4 mb-4">
+      <div className="space-y-3 mb-4 p-3 bg-stone-50 dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-700">
         {/* MultiPV */}
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Lines (MultiPV): {multiPv}
+          <label className="block text-xs font-medium mb-1.5 text-stone-700 dark:text-stone-300">
+            Lines (MultiPV): <span className="text-amber-600 dark:text-amber-400">{multiPv}</span>
           </label>
           <input
             type="range"
@@ -260,10 +261,10 @@ function EnginePanel({
             max="30"
             value={multiPv}
             onChange={(e) => handleMultiPvChange(parseInt(e.target.value))}
-            className="w-full h-3"
+            className="w-full h-2 accent-amber-600"
             disabled={engine.thinking}
           />
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400 mt-0.5">
             <span>1</span>
             <span>30</span>
           </div>
@@ -271,29 +272,28 @@ function EnginePanel({
 
         {/* Depth */}
         <div>
-          <label className="block text-sm font-medium mb-2">Depth: {depth}</label>
+          <label className="block text-xs font-medium mb-1.5 text-stone-700 dark:text-stone-300">
+            Depth: <span className="text-amber-600 dark:text-amber-400">{depth}</span>
+          </label>
           <input
             type="range"
             min="8"
             max="50"
             value={depth}
             onChange={(e) => setDepth(parseInt(e.target.value))}
-            className="w-full"
+            className="w-full h-2 accent-amber-600"
             disabled={engine.thinking || movetimeMs > 0}
           />
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400 mt-0.5">
             <span>8</span>
             <span>50</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Note: Very deep analysis (30+) can take several minutes
-          </p>
         </div>
 
         {/* Time */}
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Time (ms) {movetimeMs > 0 && `(overrides depth)`}
+          <label className="block text-xs font-medium mb-1.5 text-stone-700 dark:text-stone-300">
+            Time (ms) {movetimeMs > 0 && <span className="text-amber-600">✓</span>}
           </label>
           <input
             type="number"
@@ -302,7 +302,7 @@ function EnginePanel({
             step="100"
             value={movetimeMs}
             onChange={(e) => setMovetimeMs(parseInt(e.target.value) || 0)}
-            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+            className="w-full px-3 py-1.5 border border-stone-300 dark:border-stone-600 rounded-lg text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
             disabled={engine.thinking}
             placeholder="0 = use depth"
           />
@@ -310,10 +310,10 @@ function EnginePanel({
 
         {/* Threads */}
         <div>
-          <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-            Threads: {threads}
+          <label className="block text-xs font-medium mb-1.5 text-stone-700 dark:text-stone-300 flex items-center gap-1">
+            Threads: <span className="text-amber-600 dark:text-amber-400">{threads}</span>
             <span
-              className="text-xs text-gray-500 dark:text-gray-400 cursor-help"
+              className="text-xs text-stone-400 cursor-help"
               title=">1 requires cross-origin isolation (COOP/COEP headers)"
             >
               ⓘ
@@ -322,7 +322,7 @@ function EnginePanel({
           <select
             value={threads}
             onChange={(e) => handleThreadsChange(parseInt(e.target.value))}
-            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+            className="w-full px-3 py-1.5 border border-stone-300 dark:border-stone-600 rounded-lg text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
             disabled={engine.thinking}
           >
             <option value="1">1 (default)</option>
@@ -330,9 +330,6 @@ function EnginePanel({
             <option value="4">4</option>
             <option value="8">8</option>
           </select>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Multi-threading requires COOP/COEP headers
-          </p>
         </div>
       </div>
 
@@ -341,28 +338,28 @@ function EnginePanel({
         <button
           onClick={handleAnalyze}
           disabled={engine.thinking}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary text-sm"
           title="Manual analysis (auto-analysis runs continuously)"
         >
-          {engine.thinking ? 'Analyzing...' : 'Analyze (Manual)'}
+          {engine.thinking ? 'Analyzing...' : 'Analyze'}
         </button>
         <button
           onClick={handleStop}
           disabled={!engine.thinking}
-          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-danger text-sm"
         >
           Stop
         </button>
         <button
           onClick={handleUseBestMove}
           disabled={!engine.bestMove || engine.thinking}
-          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-success text-sm"
         >
-          Use Best Move
+          Use Best
         </button>
         <button
           onClick={handleNewGame}
-          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+          className="btn-secondary text-sm"
         >
           New Game
         </button>
@@ -370,10 +367,10 @@ function EnginePanel({
 
       {/* Raw Output (collapsed by default) */}
       <details className="mt-4">
-        <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+        <summary className="cursor-pointer text-xs text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 px-3 py-2 bg-stone-100 dark:bg-stone-800 rounded-lg">
           Show raw engine output
         </summary>
-        <div className="mt-2 p-2 bg-gray-900 text-green-400 rounded text-xs font-mono max-h-40 overflow-y-auto">
+        <div className="mt-2 p-3 bg-stone-950 text-emerald-400 rounded-lg text-xs font-mono max-h-40 overflow-y-auto elegant-scrollbar border border-stone-700">
           {engine.raw.slice(-20).map((line, i) => (
             <div key={i}>{line}</div>
           ))}

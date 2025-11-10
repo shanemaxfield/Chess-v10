@@ -177,7 +177,7 @@ function ChessBoard() {
   return (
     <div className="flex flex-col items-center">
       <div
-        className="relative grid grid-cols-8 border-4 border-gray-800 dark:border-gray-200 shadow-2xl"
+        className="relative grid grid-cols-8 border-[6px] border-stone-800 dark:border-amber-700/50 shadow-2xl rounded-sm overflow-hidden"
         style={{ width: SQUARE_SIZE * 8, height: SQUARE_SIZE * 8 }}
       >
         {arrowElements}

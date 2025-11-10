@@ -38,46 +38,48 @@ function Controls() {
   }
 
   return (
-    <div className="mt-6 w-full max-w-2xl">
+    <div className="w-full max-w-2xl space-y-4">
       {/* Game Status */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
-        <p className="text-center text-lg font-semibold">{getGameStatus()}</p>
+      <div className="panel-elegant p-4">
+        <p className="text-center text-base font-semibold text-stone-900 dark:text-stone-100">
+          {getGameStatus()}
+        </p>
       </div>
 
       {/* Control Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <button
           onClick={resetGame}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+          className="btn-primary text-sm"
         >
           New Game
         </button>
         <button
           onClick={undoMove}
           disabled={!canUndo}
-          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-secondary text-sm"
         >
-          Undo
+          ← Undo
         </button>
         <button
           onClick={redoMove}
           disabled={!canRedo}
-          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-secondary text-sm"
         >
-          Redo
+          Redo →
         </button>
         <button
           onClick={flipOrientation}
-          className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
+          className="btn-secondary text-sm"
         >
-          Flip Board
+          ⟲ Flip
         </button>
       </div>
 
       {/* Sound Settings */}
-      <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-        <div className="flex items-center justify-between mb-2">
-          <label htmlFor="sound-toggle" className="font-medium">
+      <div className="panel-elegant p-4">
+        <div className="flex items-center justify-between mb-3">
+          <label htmlFor="sound-toggle" className="font-medium text-stone-900 dark:text-stone-100 text-sm">
             Sound Effects
           </label>
           <input
@@ -85,12 +87,12 @@ function Controls() {
             type="checkbox"
             checked={settings.soundEnabled}
             onChange={(e) => updateSettings({ soundEnabled: e.target.checked })}
-            className="w-5 h-5 rounded"
+            className="w-5 h-5 rounded accent-amber-600"
           />
         </div>
         {settings.soundEnabled && (
           <div className="flex items-center gap-3">
-            <label htmlFor="volume" className="text-sm">
+            <label htmlFor="volume" className="text-sm text-stone-700 dark:text-stone-300">
               Volume:
             </label>
             <input
@@ -101,20 +103,37 @@ function Controls() {
               step="0.1"
               value={settings.soundVolume}
               onChange={(e) => updateSettings({ soundVolume: parseFloat(e.target.value) })}
-              className="flex-1"
+              className="flex-1 accent-amber-600"
             />
-            <span className="text-sm w-12">{Math.round(settings.soundVolume * 100)}%</span>
+            <span className="text-sm w-12 text-stone-700 dark:text-stone-300 font-medium">
+              {Math.round(settings.soundVolume * 100)}%
+            </span>
           </div>
         )}
       </div>
 
       {/* Keyboard Cheat Sheet */}
-      <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-        <h3 className="font-semibold mb-2">Keyboard Controls</h3>
-        <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Arrow Left/Right</kbd> - Navigate move history</p>
-          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Drag & Drop</kbd> - Move pieces</p>
-          <p><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> - Cancel promotion</p>
+      <div className="panel-elegant p-4">
+        <h3 className="font-semibold mb-3 text-stone-900 dark:text-stone-100 text-sm">Keyboard Controls</h3>
+        <div className="text-xs space-y-2 text-stone-700 dark:text-stone-300">
+          <p>
+            <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded border border-stone-300 dark:border-stone-600 font-mono">
+              ← →
+            </kbd>
+            {' '}Navigate move history
+          </p>
+          <p>
+            <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded border border-stone-300 dark:border-stone-600 font-mono">
+              Drag
+            </kbd>
+            {' '}Move pieces
+          </p>
+          <p>
+            <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded border border-stone-300 dark:border-stone-600 font-mono">
+              Esc
+            </kbd>
+            {' '}Cancel promotion
+          </p>
         </div>
       </div>
     </div>

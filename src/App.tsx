@@ -82,27 +82,42 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       <TopBar />
-      <main className="flex-1 flex flex-col xl:flex-row gap-6 p-4 mx-auto w-full" style={{ maxWidth: '1600px' }}>
-        <div className="flex-1 flex flex-col items-center gap-4">
-          <ChessBoard />
-          <Controls />
-        </div>
-        <aside className="lg:w-80 flex flex-col gap-6">
-          <MoveList />
-          <div className="h-96">
-            <ChatPanel engine={engine} />
+      <main className="flex-1 flex flex-col lg:flex-row gap-8 p-6 lg:p-8 mx-auto w-full max-w-[1800px]">
+        {/* Main content area - Board and Chat take center stage */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-8 items-start">
+          {/* Chess Board - Primary focus */}
+          <div className="flex flex-col items-center gap-5 lg:flex-1">
+            <ChessBoard />
+            <Controls />
           </div>
-        </aside>
-        <aside className="lg:w-96 flex flex-col">
-          <EnginePanel
-            engine={engine}
-            isWhiteToMove={isWhiteToMove}
-            onUseBestMove={handleUseBestMove}
-            onPreviewPv={handlePreviewPv}
-            onClearPreview={handleClearPreview}
-          />
+
+          {/* Chat Panel - Secondary focus, prominent placement */}
+          <div className="lg:w-[420px] flex flex-col">
+            <div className="h-[600px]">
+              <ChatPanel engine={engine} />
+            </div>
+          </div>
+        </div>
+
+        {/* Utility panels - Accessible but understated */}
+        <aside className="lg:w-80 xl:w-96 flex flex-col gap-6">
+          {/* Move List - Compact */}
+          <div className="max-h-64">
+            <MoveList />
+          </div>
+
+          {/* Engine Panel - Below fold */}
+          <div className="flex-1">
+            <EnginePanel
+              engine={engine}
+              isWhiteToMove={isWhiteToMove}
+              onUseBestMove={handleUseBestMove}
+              onPreviewPv={handlePreviewPv}
+              onClearPreview={handleClearPreview}
+            />
+          </div>
         </aside>
       </main>
       <PromotionModal />

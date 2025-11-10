@@ -163,39 +163,56 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+    <div className="flex flex-col h-full panel-elegant overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+      <div className="px-5 py-4 border-b border-stone-200/50 dark:border-stone-700/50 bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-950/20 dark:to-transparent">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-              Chess AI Assistant {useLLM && '🤖'}
-            </h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {useLLM
-                ? 'Ask me anything about chess! I can move pieces, suggest moves, and explain positions.'
-                : 'Try: "e4", "arrow from b6 to c2", "highlight f7 and h7"'
-              }
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
+                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-stone-900 dark:text-stone-100 text-lg">
+                AI Chess Assistant
+              </h3>
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-0.5">
+                {useLLM
+                  ? 'Natural language chess analysis & control'
+                  : 'Command-based board interaction'
+                }
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setUseLLM(!useLLM)}
-            className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium border border-amber-200 dark:border-amber-800"
             title={useLLM ? 'Switch to hardcoded parser' : 'Switch to AI assistant'}
           >
-            {useLLM ? 'AI' : 'Basic'}
+            {useLLM ? '✨ AI' : '⚙️ Basic'}
           </button>
         </div>
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 elegant-scrollbar">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-8">
-            {useLLM
-              ? "👋 Hi! I'm your chess AI assistant. Try asking me to make a move, suggest the best move, or explain a position!"
-              : 'Send a message to trigger board actions'
-            }
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center max-w-xs">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/30 flex items-center justify-center">
+                <svg className="w-8 h-8 text-amber-600 dark:text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
+                </svg>
+              </div>
+              <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed">
+                {useLLM
+                  ? "Start a conversation! Ask me to analyze positions, suggest moves, or make plays on the board."
+                  : 'Enter commands to control the board and pieces.'
+                }
+              </p>
+            </div>
           </div>
         ) : (
           messages.map((msg) => (
@@ -204,10 +221,10 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
                 className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap shadow-sm ${
                     msg.isUser
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   {msg.text}
@@ -222,7 +239,7 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
                       key={idx}
                       onClick={() => handleFollowUp(followUp)}
                       disabled={isProcessing}
-                      className="text-xs px-2 py-1 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-xs px-3 py-1.5 rounded-full bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-amber-50 hover:border-amber-300 dark:hover:bg-amber-900/20 dark:hover:border-amber-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {followUp}
                     </button>
@@ -236,11 +253,11 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
         {/* Loading indicator */}
         {isProcessing && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] px-3 py-2 rounded-lg text-sm bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+            <div className="max-w-[85%] px-4 py-3 rounded-2xl text-sm bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
               </div>
             </div>
           </div>
@@ -248,22 +265,22 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
       </div>
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-300 dark:border-gray-600">
-        <div className="flex gap-2">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-stone-200/50 dark:border-stone-700/50 bg-stone-50/50 dark:bg-stone-900/50">
+        <div className="flex gap-3">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={useLLM ? "Ask me anything about chess..." : "Type a command..."}
             disabled={isProcessing}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2.5 border border-stone-300 dark:border-stone-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-stone-400 dark:placeholder:text-stone-500 shadow-sm"
           />
           <button
             type="submit"
             disabled={!input.trim() || isProcessing}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn-primary"
           >
-            {isProcessing ? 'Processing...' : 'Send'}
+            {isProcessing ? '...' : 'Send'}
           </button>
         </div>
       </form>
