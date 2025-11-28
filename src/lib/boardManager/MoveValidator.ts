@@ -4,8 +4,9 @@
  */
 
 import { Chess, Square, Move } from 'chess.js';
-import { IllegalMoveError, NoPieceError, WrongColorError } from './errors';
-import { CategorizedMoves, ValidationResult, ChessColor } from './types';
+// Error types are used in error handling but may not be directly referenced
+// import { IllegalMoveError, NoPieceError, WrongColorError } from './errors';
+import { CategorizedMoves, ValidationResult } from './types';
 
 export class MoveValidator {
   constructor(private chess: Chess) {}

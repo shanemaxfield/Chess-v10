@@ -80,12 +80,13 @@ function EnginePanel({
     }
   }
 
-  const handleClearSelection = () => {
-    setSelectedPvIndex(null)
-    if (onClearPreview) {
-      onClearPreview()
-    }
-  }
+  // Unused function - kept for potential future use
+  // const handleClearSelection = () => {
+  //   setSelectedPvIndex(null)
+  //   if (onClearPreview) {
+  //     onClearPreview()
+  //   }
+  // }
 
   const handleTogglePvLine = (line: PvLine, index: number, e: React.MouseEvent) => {
     e.stopPropagation()

@@ -3,7 +3,7 @@
  * Uses multiple redundant representations to ensure position integrity
  */
 
-import { Chess, Square, Piece, Color } from 'chess.js';
+import { Chess, Square, Piece } from 'chess.js';
 import { InvalidFENError, PositionIntegrityError } from './errors';
 import { ChessColor, ChessPiece, PiecePlacement } from './types';
 
@@ -58,7 +58,7 @@ export class PositionTracker {
    * Get piece on a specific square
    */
   getPieceOnSquare(square: Square): Piece | null {
-    return this.chess.get(square);
+    return this.chess.get(square) || null;
   }
 
   /**
@@ -240,7 +240,7 @@ export class PositionTracker {
       const row: (Piece | null)[] = [];
       for (let file = 0; file < 8; file++) {
         const square = this.coordsToSquare(file, rank);
-        const piece = square ? this.chess.get(square) : null;
+        const piece = square ? (this.chess.get(square) || null) : null;
         row.push(piece);
       }
       board.push(row);

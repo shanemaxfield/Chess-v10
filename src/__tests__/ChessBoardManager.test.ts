@@ -336,7 +336,7 @@ describe('ChessBoardManager', () => {
       const manager = new ChessBoardManager();
 
       const start = performance.now();
-      const context = manager.getPositionContext();
+      manager.getPositionContext();
       const end = performance.now();
 
       const timeMs = end - start;

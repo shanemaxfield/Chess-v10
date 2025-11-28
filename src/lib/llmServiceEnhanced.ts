@@ -4,7 +4,6 @@
  */
 
 import OpenAI from 'openai';
-import { Chess } from 'chess.js';
 import { ActionPlan } from './actions/types';
 import { PvLine } from '../engine/stockfishService';
 import { formatScore } from '../utils/eval';
@@ -93,7 +92,7 @@ export class EnhancedChessLLMService {
     try {
       // Get comprehensive position context from board manager
       const context = boardManager.getContextForLLM();
-      const naturalLanguage = context.naturalLanguage;
+      // const naturalLanguage = context.naturalLanguage;
       const positionData = context.position;
 
       // Format Stockfish lines if available

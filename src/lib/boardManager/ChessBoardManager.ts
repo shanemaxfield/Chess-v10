@@ -10,12 +10,13 @@ import { MoveValidator } from './MoveValidator';
 import { FeatureExtractor } from './FeatureExtractor';
 import { PositionSerializer } from './PositionSerializer';
 import { StateHistory } from './StateHistory';
-import {
-  IllegalMoveError,
-  InvalidSquareError,
-  NoPieceError,
-  WrongColorError,
-} from './errors';
+// Error types are used in error handling but may not be directly referenced
+// import {
+//   IllegalMoveError,
+//   InvalidSquareError,
+//   NoPieceError,
+//   WrongColorError,
+// } from './errors';
 import {
   MoveResult,
   ValidationResult,
@@ -60,8 +61,11 @@ export class ChessBoardManager {
    */
   makeMove(from: Square, to: Square, promotion?: PieceSymbol): MoveResult {
     try {
-      // Validate the move first
-      const validation = this.moveValidator.validateMove(from, to, promotion);
+      // Validate the move first - only allow valid promotion pieces
+      const validPromotion = promotion && ['q', 'r', 'b', 'n'].includes(promotion) 
+        ? promotion as 'q' | 'r' | 'b' | 'n' 
+        : undefined;
+      const validation = this.moveValidator.validateMove(from, to, validPromotion);
       if (!validation.valid) {
         return {
           success: false,
@@ -186,7 +190,10 @@ export class ChessBoardManager {
    * Validate a move without executing it
    */
   validateMove(from: Square, to: Square, promotion?: PieceSymbol): ValidationResult {
-    return this.moveValidator.validateMove(from, to, promotion);
+    const validPromotion = promotion && ['q', 'r', 'b', 'n'].includes(promotion) 
+      ? promotion as 'q' | 'r' | 'b' | 'n' 
+      : undefined;
+    return this.moveValidator.validateMove(from, to, validPromotion);
   }
 
   /**

@@ -578,9 +578,9 @@ export class FeatureExtractor {
   }
 
   private checkForSkewer(
-    square: Square,
-    direction: { file: number; rank: number },
-    color: 'w' | 'b'
+    _square: Square,
+    _direction: { file: number; rank: number },
+    _color: 'w' | 'b'
   ): { frontPiece: any; backPiece: any } | null {
     // Simplified - would need full implementation
     return null;

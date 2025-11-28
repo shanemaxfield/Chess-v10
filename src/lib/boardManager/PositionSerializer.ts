@@ -3,7 +3,7 @@
  * Provides comprehensive context for LLM consumption and debugging
  */
 
-import { Chess, Square } from 'chess.js';
+import { Square } from 'chess.js';
 import { PositionTracker } from './PositionTracker';
 import { MoveValidator } from './MoveValidator';
 import { FeatureExtractor } from './FeatureExtractor';
@@ -20,7 +20,7 @@ export class PositionSerializer {
    * Get comprehensive position context for LLM consumption
    */
   getComprehensiveContext(): ComprehensivePositionContext {
-    const chess = this.positionTracker.getChessInstance();
+    // const chess = this.positionTracker.getChessInstance();
 
     return {
       fen: this.positionTracker.getFEN(),
@@ -55,7 +55,7 @@ export class PositionSerializer {
    * Get ASCII board representation for debugging
    */
   getBoardASCII(): string {
-    const chess = this.positionTracker.getChessInstance();
+    // const chess = this.positionTracker.getChessInstance();
     const board = this.positionTracker.getBoardArray();
 
     let ascii = '   a b c d e f g h\n';
@@ -88,7 +88,7 @@ export class PositionSerializer {
    * Get board as JSON object
    */
   getBoardJSON(): Record<Square, { type: string; color: string } | null> {
-    const chess = this.positionTracker.getChessInstance();
+    // const chess = this.positionTracker.getChessInstance();
     const result: Record<string, { type: string; color: string } | null> = {};
 
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];

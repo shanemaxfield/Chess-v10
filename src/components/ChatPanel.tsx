@@ -162,6 +162,11 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
     setInput(followUpText)
   }
 
+  const handleClearChat = () => {
+    setMessages([])
+    setMessageIdCounter(0)
+  }
+
   return (
     <div className="flex flex-col h-full panel-elegant overflow-hidden">
       {/* Header */}
@@ -186,13 +191,23 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setUseLLM(!useLLM)}
-            className="text-xs px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium border border-amber-200 dark:border-amber-800"
-            title={useLLM ? 'Switch to hardcoded parser' : 'Switch to AI assistant'}
-          >
-            {useLLM ? '✨ AI' : '⚙️ Basic'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleClearChat}
+              disabled={messages.length === 0}
+              className="text-xs px-3 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors font-medium border border-stone-300 dark:border-stone-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Clear chat history"
+            >
+              🗑️ Clear
+            </button>
+            <button
+              onClick={() => setUseLLM(!useLLM)}
+              className="text-xs px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium border border-amber-200 dark:border-amber-800"
+              title={useLLM ? 'Switch to hardcoded parser' : 'Switch to AI assistant'}
+            >
+              {useLLM ? '✨ AI' : '⚙️ Basic'}
+            </button>
+          </div>
         </div>
       </div>
 

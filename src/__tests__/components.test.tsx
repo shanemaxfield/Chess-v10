@@ -93,7 +93,7 @@ describe('Component Tests', () => {
 
       render(<Controls />)
 
-      const undoButton = screen.getByText('Undo')
+      const undoButton = screen.getByText('← Undo')
       fireEvent.click(undoButton)
 
       expect(useGameStore.getState().currentPly).toBe(0)
@@ -102,14 +102,14 @@ describe('Component Tests', () => {
     it('should disable Undo when no moves', () => {
       render(<Controls />)
 
-      const undoButton = screen.getByText('Undo')
+      const undoButton = screen.getByText('← Undo')
       expect(undoButton).toBeDisabled()
     })
 
     it('should flip board orientation', () => {
       render(<Controls />)
 
-      const flipButton = screen.getByText('Flip Board')
+      const flipButton = screen.getByText('⟲ Flip')
       fireEvent.click(flipButton)
 
       expect(useGameStore.getState().orientation).toBe('b')

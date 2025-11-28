@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Chess } from 'chess.js'
-import { stockfishService, PvLine, StockfishState, StockfishOptions, AnalyzeParams } from './stockfishService'
+import { stockfishService, StockfishState, StockfishOptions, AnalyzeParams, PvLine } from './stockfishService'
+
+// Re-export PvLine for convenience (used by EnginePanel)
+export type { PvLine }
 
 export interface UseStockfishReturn extends StockfishState {
   init: (options?: StockfishOptions) => void

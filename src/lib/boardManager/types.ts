@@ -2,7 +2,7 @@
  * Type definitions for chess board state management system
  */
 
-import { Square, PieceSymbol, Color } from 'chess.js';
+import { Square } from 'chess.js';
 
 export type ChessColor = 'white' | 'black';
 export type ChessPiece = 'king' | 'queen' | 'rook' | 'bishop' | 'knight' | 'pawn';
