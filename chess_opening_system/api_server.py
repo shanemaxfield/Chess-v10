@@ -8,6 +8,7 @@ from flask_cors import CORS
 import chess
 
 from chess_opening_system import create_opening_system
+from chess_opening_system.main_multi_intent import create_enhanced_system
 from chess_opening_system.llm import ResponseParser
 
 # Initialize Flask app
@@ -16,6 +17,7 @@ CORS(app)  # Enable CORS for frontend requests
 
 # Initialize chess opening system (singleton)
 opening_system = None
+enhanced_system = None
 
 
 def get_system():
@@ -24,6 +26,14 @@ def get_system():
     if opening_system is None:
         opening_system = create_opening_system()
     return opening_system
+
+
+def get_enhanced_system():
+    """Get or create enhanced system with multi-intent support."""
+    global enhanced_system
+    if enhanced_system is None:
+        enhanced_system = create_enhanced_system()
+    return enhanced_system
 
 
 @app.route('/health', methods=['GET'])
@@ -68,6 +78,63 @@ def process_query():
         # Convert to JSON-serializable format
         response = {
             'query_type': result['query_type'],
+            'rating_range': result['rating_range'],
+            'prompt': result['prompt'],
+            'context_data': serialize_context(result.get('context_data', {}))
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/query/multi', methods=['POST'])
+def process_multi_intent_query():
+    """
+    Process a chess opening query with multi-intent support.
+
+    Handles compound queries like:
+    - "Can I transpose to QGD and what should I play at 1500?"
+    - "Show me Sicilian lines and explain the main ideas"
+
+    Request body:
+    {
+        "query": "Can I transpose to QGD and what should I play?",
+        "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        "rating_range": [1400, 1600],
+        "use_multi_intent": true
+    }
+
+    Response:
+    {
+        "query_types": ["transposition", "recommendation"],
+        "primary_type": "transposition",
+        "is_multi_intent": true,
+        "context_data": {...},
+        "prompt": "..."
+    }
+    """
+    try:
+        data = request.json
+
+        query = data.get('query', '')
+        fen = data.get('fen', chess.STARTING_FEN)
+        rating_range = tuple(data.get('rating_range', [1400, 1800]))
+        use_multi_intent = data.get('use_multi_intent', True)
+
+        if not query:
+            return jsonify({'error': 'Query is required'}), 400
+
+        # Process with enhanced system
+        system = get_enhanced_system()
+        result = system.process_query(query, fen, rating_range, use_multi_intent)
+
+        # Convert to JSON-serializable format
+        response = {
+            'query_types': result.get('query_types', [result.get('query_type')]),
+            'primary_type': result.get('primary_type', result.get('query_type')),
+            'is_multi_intent': result.get('is_multi_intent', False),
             'rating_range': result['rating_range'],
             'prompt': result['prompt'],
             'context_data': serialize_context(result.get('context_data', {}))
