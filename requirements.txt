@@ -1,0 +1,24 @@
+# Chess Opening Knowledge System Requirements
+
+# Core chess library
+chess>=1.10.0
+
+# HTTP requests for API calls
+requests>=2.31.0
+
+# Flask API server
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Optional: For faster JSON parsing
+# orjson>=3.9.0
+
+# Optional: For additional analysis
+# numpy>=1.24.0
+# pandas>=2.0.0
+
+# Development dependencies (optional)
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# black>=23.0.0
+# mypy>=1.5.0
