@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import ChessBoard from './components/ChessBoard'
 import TopBar from './components/TopBar'
 import Controls from './components/Controls'
-import MoveList from './components/MoveList'
 import PromotionModal from './components/PromotionModal'
 import EnginePanel from './components/EnginePanel'
 import ChatPanel from './components/ChatPanel'
@@ -82,43 +81,35 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <TopBar />
-      <main className="flex-1 flex flex-col lg:flex-row gap-8 p-6 lg:p-8 mx-auto w-full max-w-[1800px]">
-        {/* Main content area - Board and Chat take center stage */}
-        <div className="flex-1 flex flex-col lg:flex-row gap-8 items-start">
+      <main className="flex-1 flex flex-col gap-4 p-4 mx-auto w-full max-w-[1920px]">
+        {/* Main content - Board and Chat side by side */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-4">
           {/* Chess Board - Primary focus */}
-          <div className="flex flex-col items-center gap-5 lg:flex-1">
+          <div className="flex flex-col items-center gap-4 lg:flex-1">
             <ChessBoard />
             <Controls />
           </div>
 
-          {/* Chat Panel - Secondary focus, prominent placement */}
-          <div className="lg:w-[420px] flex flex-col">
-            <div className="h-[600px]">
+          {/* Chat Panel - Equal focus, side by side */}
+          <div className="lg:flex-1 flex flex-col">
+            <div className="h-[700px]">
               <ChatPanel engine={engine} />
             </div>
           </div>
         </div>
 
-        {/* Utility panels - Accessible but understated */}
-        <aside className="lg:w-80 xl:w-96 flex flex-col gap-6">
-          {/* Move List - Compact */}
-          <div className="max-h-64">
-            <MoveList />
-          </div>
-
-          {/* Engine Panel - Below fold */}
-          <div className="flex-1">
-            <EnginePanel
-              engine={engine}
-              isWhiteToMove={isWhiteToMove}
-              onUseBestMove={handleUseBestMove}
-              onPreviewPv={handlePreviewPv}
-              onClearPreview={handleClearPreview}
-            />
-          </div>
-        </aside>
+        {/* Engine Panel - Compact, bottom section */}
+        <div className="w-full max-h-60">
+          <EnginePanel
+            engine={engine}
+            isWhiteToMove={isWhiteToMove}
+            onUseBestMove={handleUseBestMove}
+            onPreviewPv={handlePreviewPv}
+            onClearPreview={handleClearPreview}
+          />
+        </div>
       </main>
       <PromotionModal />
     </div>

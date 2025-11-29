@@ -147,7 +147,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   pendingPromotion: null,
 
   orientation: 'w',
-  isDarkMode: false,
+  isDarkMode: true,
   settings: initialSettings,
 
   isCheck: false,
