@@ -15,6 +15,35 @@ dist-ssr
 # Environment variables
 .env
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.pkl
+*.pickle
+
+# Virtual environments
+venv/
+ENV/
+env/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
