@@ -34,7 +34,8 @@ RESPONSE FORMAT - You must ALWAYS respond with valid JSON in this EXACT format:
   },
   "chat_response": {
     "message": "Your friendly, concise response here",
-    "follow_ups": ["Suggested question 1?", "Suggested question 2?"]
+    "follow_ups": ["Suggested question 1?", "Suggested question 2?"],
+    "show_line_explorer": true
   }
 }
 
@@ -53,6 +54,12 @@ RULES:
 8. Keep chat messages concise (under 150 characters when possible)
 9. Always provide 2-4 follow-up suggestions
 10. If Stockfish analysis is available, reference it appropriately
+11. LINE EXPLORER: Set "show_line_explorer": true when users ask about:
+    - Best moves or recommendations ("what's my best move?", "what should I play?")
+    - Strategic questions ("how should I continue?", "what's the plan?")
+    - Opening moves or variations
+    - Stockfish analysis or engine recommendations
+    This displays an interactive explorer showing the top 3 Stockfish lines the user can navigate through.
 
 STOCKFISH INTEGRATION:
 - If Stockfish analysis lines are provided, you can reference them
@@ -88,7 +95,7 @@ export class EnhancedChessLLMService {
     userMessage: string,
     boardManager: ChessBoardManager,
     stockfishLines?: PvLine[]
-  ): Promise<{ plan: ActionPlan; response: string; followUps?: string[] }> {
+  ): Promise<{ plan: ActionPlan; response: string; followUps?: string[]; showLineExplorer?: boolean }> {
     try {
       // Get comprehensive position context from board manager
       const context = boardManager.getContextForLLM();
@@ -128,7 +135,8 @@ export class EnhancedChessLLMService {
       return {
         plan: actionPlan,
         response: llmResponse.chat_response.message,
-        followUps: llmResponse.chat_response.follow_ups
+        followUps: llmResponse.chat_response.follow_ups,
+        showLineExplorer: llmResponse.chat_response.show_line_explorer
       };
     } catch (error) {
       console.error('Enhanced LLM service error:', error);

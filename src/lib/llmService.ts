@@ -25,6 +25,7 @@ export interface LLMResponse {
   chat_response: {
     message: string;
     follow_ups?: string[];
+    show_line_explorer?: boolean;
   };
 }
 
@@ -41,7 +42,8 @@ CRITICAL: You must ALWAYS respond with valid JSON in this EXACT format:
   },
   "chat_response": {
     "message": "Your friendly, concise response here",
-    "follow_ups": ["Suggested question 1?", "Suggested question 2?"]
+    "follow_ups": ["Suggested question 1?", "Suggested question 2?"],
+    "show_line_explorer": true
   }
 }
 
@@ -59,6 +61,12 @@ RULES:
 7. Always provide 2-4 follow-up suggestions
 8. If you can't determine a move, provide helpful arrows or highlights instead
 9. Clear previous annotations (clear_previous: true) unless comparing multiple options
+10. LINE EXPLORER: Set "show_line_explorer": true when users ask about:
+    - Best moves or recommendations ("what's my best move?", "what should I play?")
+    - Strategic questions ("how should I continue?", "what's the plan?")
+    - Opening moves or variations
+    - Stockfish analysis or engine recommendations
+    This displays an interactive explorer showing the top 3 Stockfish lines the user can navigate through.
 
 USER CONTEXT:
 - Current position is provided as FEN notation
@@ -266,7 +274,7 @@ export class ChessLLMService {
     userMessage: string,
     chess: Chess,
     stockfishLines?: PvLine[]
-  ): Promise<{ plan: ActionPlan; response: string; followUps?: string[] }> {
+  ): Promise<{ plan: ActionPlan; response: string; followUps?: string[]; showLineExplorer?: boolean }> {
     try {
       const fen = chess.fen();
       const legalMoves = this.getLegalMovesUCI(chess);
@@ -306,7 +314,8 @@ Respond with JSON only (no markdown, no code blocks):`;
       return {
         plan: actionPlan,
         response: llmResponse.chat_response.message,
-        followUps: llmResponse.chat_response.follow_ups
+        followUps: llmResponse.chat_response.follow_ups,
+        showLineExplorer: llmResponse.chat_response.show_line_explorer
       };
     } catch (error) {
       console.error('LLM service error:', error);

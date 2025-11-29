@@ -6,12 +6,15 @@ import { reconcileHighlights } from '../lib/actions/HighlightController'
 import { initializeLLMService, getLLMService } from '../lib/llmService'
 import { LLM_CONFIG } from '../config/llmConfig'
 import { UseStockfishReturn } from '../engine/useStockfish'
+import { LineExplorer } from './LineExplorer'
 
 interface Message {
   id: number
   text: string
   isUser: boolean
   followUps?: string[]
+  showLineExplorer?: boolean
+  currentFen?: string
 }
 
 interface ChatPanelProps {
@@ -113,6 +116,7 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
     try {
       let responseText = 'No actions matched.'
       let followUps: string[] | undefined
+      let showLineExplorer = false
 
       if (useLLM) {
         // Use LLM service
@@ -122,6 +126,7 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
           executePlan(result.plan, result.response)
           responseText = result.response
           followUps = result.followUps
+          showLineExplorer = result.showLineExplorer || false
         } else {
           responseText = 'LLM service not initialized. Using fallback parser.'
           const plan = planActions(userInput, chess)
@@ -141,6 +146,8 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
         text: responseText,
         isUser: false,
         followUps,
+        showLineExplorer: showLineExplorer && engine.lines.length > 0,
+        currentFen: chess.fen(),
       }
       setMessages((prev) => [...prev, assistantMessage])
       setMessageIdCounter((prev) => prev + 2)
@@ -259,6 +266,13 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
                       {followUp}
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Line Explorer */}
+              {!msg.isUser && msg.showLineExplorer && msg.currentFen && (
+                <div className="pl-2">
+                  <LineExplorer lines={engine.lines} currentFen={msg.currentFen} />
                 </div>
               )}
             </div>
