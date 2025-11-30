@@ -23,6 +23,13 @@ export interface MoveHistoryEntry {
   moveNumber: number
 }
 
+export interface QueuedMove {
+  san: string
+  from?: Square
+  to?: Square
+  promotion?: PieceSymbol
+}
+
 interface GameState {
   // Chess engine
   chess: Chess
@@ -37,7 +44,7 @@ interface GameState {
   previewArrow: { from: Square; to: Square } | null
   arrows: ArrowState[]
   highlights: HighlightState[]
-  
+
   // PV Line display
   displayedPvLine: {
     startFen: string
@@ -51,6 +58,11 @@ interface GameState {
 
   // Promotion
   pendingPromotion: PendingPromotion | null
+
+  // Move queue for sequential playback
+  moveQueue: QueuedMove[]
+  isPlayingSequence: boolean
+  sequenceDelay: number // Delay in ms between moves
 
   // Settings
   orientation: PlayerColor
@@ -87,13 +99,20 @@ interface GameState {
   updateSettings: (settings: Partial<GameSettings>) => void
   importPGN: (pgn: string) => boolean
   exportPGN: () => string
-  
+
   // PV Line display actions
   showPvLine: (startFen: string, uciMoves: string[]) => void
   hidePvLine: () => void
   nextPvMove: () => void
   prevPvMove: () => void
   setPvMoveIndex: (index: number) => void
+
+  // Move queue actions
+  queueMoves: (moves: string[]) => void
+  playSequence: () => void
+  stopSequence: () => void
+  clearQueue: () => void
+  setSequenceDelay: (delay: number) => void
 }
 
 const initialSettings: GameSettings = {
@@ -145,6 +164,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   draggedPiece: null,
 
   pendingPromotion: null,
+
+  moveQueue: [],
+  isPlayingSequence: false,
+  sequenceDelay: 1000, // 1 second default delay
 
   orientation: 'w',
   isDarkMode: true,
@@ -560,5 +583,85 @@ export const useGameStore = create<GameState>((set, get) => ({
   exportPGN: () => {
     const { chess } = get()
     return chess.pgn()
+  },
+
+  // Move queue implementation
+  queueMoves: (moveSans: string[]) => {
+    const { chess } = get()
+    const queuedMoves: QueuedMove[] = []
+
+    // Create a temporary chess instance to validate the sequence
+    const tempChess = new Chess(chess.fen())
+
+    // Parse each SAN move and validate it in sequence
+    for (const san of moveSans) {
+      const trimmedSan = san.trim()
+      if (!trimmedSan) continue
+
+      // Get all legal moves from the temp board state
+      const legalMoves = tempChess.moves({ verbose: true })
+      const matchingMove = legalMoves.find(m => m.san === trimmedSan)
+
+      if (matchingMove) {
+        queuedMoves.push({
+          san: matchingMove.san,
+          from: matchingMove.from,
+          to: matchingMove.to,
+          promotion: matchingMove.promotion,
+        })
+        // Make the move on the temp board to validate next moves
+        tempChess.move(trimmedSan)
+      } else {
+        console.warn(`Invalid move in sequence: ${trimmedSan}`)
+        // Stop processing further moves if one is invalid
+        break
+      }
+    }
+
+    set({ moveQueue: queuedMoves })
+  },
+
+  playSequence: async () => {
+    const { moveQueue, isPlayingSequence, sequenceDelay } = get()
+
+    if (isPlayingSequence || moveQueue.length === 0) return
+
+    set({ isPlayingSequence: true })
+
+    // Execute moves one at a time with delay
+    for (let i = 0; i < moveQueue.length; i++) {
+      const move = moveQueue[i]
+
+      // Check if sequence was stopped
+      if (!get().isPlayingSequence) break
+
+      if (move.from && move.to) {
+        const success = get().makeMove(move.from, move.to, move.promotion)
+
+        if (!success) {
+          console.warn(`Failed to execute move: ${move.san}`)
+          break
+        }
+      }
+
+      // Wait before next move (unless it's the last move)
+      if (i < moveQueue.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, sequenceDelay))
+      }
+    }
+
+    set({ isPlayingSequence: false, moveQueue: [] })
+  },
+
+  stopSequence: () => {
+    set({ isPlayingSequence: false, moveQueue: [] })
+  },
+
+  clearQueue: () => {
+    set({ moveQueue: [] })
+  },
+
+  setSequenceDelay: (delay: number) => {
+    set({ sequenceDelay: delay })
   },
 }))

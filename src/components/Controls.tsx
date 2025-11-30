@@ -1,4 +1,5 @@
 import { useGameStore } from '../store/gameStore'
+import { useState } from 'react'
 
 function Controls() {
   const {
@@ -10,12 +11,21 @@ function Controls() {
     currentPly,
     moveHistory,
     settings,
+    moveQueue,
+    isPlayingSequence,
+    sequenceDelay,
     resetGame,
     undoMove,
     redoMove,
     flipOrientation,
     updateSettings,
+    queueMoves,
+    playSequence,
+    stopSequence,
+    setSequenceDelay,
   } = useGameStore()
+
+  const [moveInput, setMoveInput] = useState('')
 
   const turn = chess.turn()
   const canUndo = currentPly > 0
@@ -35,6 +45,24 @@ function Controls() {
       return `Check — ${turn === 'w' ? 'White' : 'Black'} to move`
     }
     return `${turn === 'w' ? 'White' : 'Black'} to move`
+  }
+
+  const handlePlaySequence = () => {
+    if (!moveInput.trim()) return
+
+    // Split by comma and parse moves
+    const moves = moveInput.split(',').map(m => m.trim()).filter(m => m)
+
+    // Queue the moves
+    queueMoves(moves)
+
+    // Start playing
+    playSequence()
+  }
+
+  const handleStopSequence = () => {
+    stopSequence()
+    setMoveInput('')
   }
 
   return (
@@ -110,6 +138,85 @@ function Controls() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Move Sequence Demonstrator */}
+      <div className="panel-elegant p-4">
+        <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100 text-sm">
+          Move Sequence Demo
+        </h3>
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="move-input" className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">
+              Enter moves (comma-separated, e.g., e4, e5, Nc3):
+            </label>
+            <input
+              id="move-input"
+              type="text"
+              value={moveInput}
+              onChange={(e) => setMoveInput(e.target.value)}
+              disabled={isPlayingSequence}
+              placeholder="e4, e5, Nc3, Nf6"
+              className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isPlayingSequence) {
+                  handlePlaySequence()
+                }
+              }}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label htmlFor="delay-slider" className="text-xs text-gray-700 dark:text-gray-300">
+              Delay:
+            </label>
+            <input
+              id="delay-slider"
+              type="range"
+              min="500"
+              max="3000"
+              step="100"
+              value={sequenceDelay}
+              onChange={(e) => setSequenceDelay(parseInt(e.target.value))}
+              disabled={isPlayingSequence}
+              className="flex-1 accent-blue-600 disabled:opacity-50"
+            />
+            <span className="text-xs w-16 text-gray-700 dark:text-gray-300 font-medium">
+              {(sequenceDelay / 1000).toFixed(1)}s
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            {!isPlayingSequence ? (
+              <button
+                onClick={handlePlaySequence}
+                disabled={!moveInput.trim()}
+                className="btn-primary text-sm flex-1"
+              >
+                ▶ Play Sequence
+              </button>
+            ) : (
+              <button
+                onClick={handleStopSequence}
+                className="btn-secondary text-sm flex-1"
+              >
+                ⏹ Stop
+              </button>
+            )}
+          </div>
+
+          {moveQueue.length > 0 && !isPlayingSequence && (
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              Queued: {moveQueue.map(m => m.san).join(', ')}
+            </div>
+          )}
+
+          {isPlayingSequence && (
+            <div className="text-xs text-blue-600 dark:text-blue-400 animate-pulse">
+              Playing sequence...
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Keyboard Cheat Sheet */}
