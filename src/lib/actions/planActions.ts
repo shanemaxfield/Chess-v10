@@ -1,5 +1,6 @@
 import { ActionPlan } from "./types";
 import { Chess, Square } from "chess.js";
+import { getLineById, getLineByIndex, searchLines, getAllLines } from "./chessLines";
 
 /**
  * Extract chess square coordinates from text (e.g., "a1", "e4", "h8")
@@ -115,9 +116,49 @@ function parseChessNotationMove(chess: Chess, notation: string): { from: Square;
  * - Move format: "move X to Y" or "X to Y"
  * - Arrow format: "arrow from X to Y"
  * - Highlight format: "highlight X [and Y...]"
+ * - Line format: "play line N" or "show italian opening" or "line N"
  */
 export function planActions(input: string, chess: Chess): ActionPlan {
   const q = input.trim().toLowerCase();
+
+  // A) Line playback: "play line 1", "show italian opening", "line 2", etc.
+  // Pattern 1: "line N" or "play line N"
+  const lineIndexMatch = q.match(/(?:play\s+)?line\s+(\d+)/i);
+  if (lineIndexMatch) {
+    const index = parseInt(lineIndexMatch[1]) - 1; // Convert to 0-based index
+    const line = getLineByIndex(index);
+    if (line) {
+      return {
+        line: { type: "line", line, moveDelay: 1000 }
+      };
+    }
+  }
+
+  // Pattern 2: "show lines" or "list lines" (return info, not an action)
+  if (q.match(/(?:show|list|display)\s+(?:all\s+)?lines/i)) {
+    // This could be handled differently - for now we'll return empty
+    return {};
+  }
+
+  // Pattern 3: Search by name (e.g., "play italian opening", "show scholars mate")
+  const lineCommandMatch = q.match(/(?:play|show|demonstrate)\s+(.+)/i);
+  if (lineCommandMatch) {
+    const query = lineCommandMatch[1];
+    const results = searchLines(query);
+    if (results.length > 0) {
+      return {
+        line: { type: "line", line: results[0], moveDelay: 1000 }
+      };
+    }
+  }
+
+  // Pattern 4: Direct line ID (e.g., "italian-opening", "scholars-mate")
+  const lineById = getLineById(q);
+  if (lineById) {
+    return {
+      line: { type: "line", line: lineById, moveDelay: 1000 }
+    };
+  }
 
   // A) Arrow drawing: "arrow from X to Y" (must check first to avoid matching as move)
   const arrowMatch = q.match(/arrow\s+from\s+([a-h][1-8])\s+to\s+([a-h][1-8])/i);

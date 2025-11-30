@@ -1,3 +1,5 @@
+import { ChessLine } from "./chessLines";
+
 export type MoveAction = {
   type: "move";
   from: string;
@@ -19,8 +21,15 @@ export type HighlightAction = {
   mode?: "add" | "clear-and-add"
 };
 
+export type LineAction = {
+  type: "line";
+  line: ChessLine;
+  moveDelay?: number;
+};
+
 export type ActionPlan = {
   moves?: MoveAction[];
   arrows?: ArrowAction[];
   highlights?: HighlightAction[];
+  line?: LineAction;
 };

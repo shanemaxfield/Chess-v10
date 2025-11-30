@@ -5,10 +5,12 @@ import Controls from './components/Controls'
 import PromotionModal from './components/PromotionModal'
 import EnginePanel from './components/EnginePanel'
 import ChatPanel from './components/ChatPanel'
+import LinePlaybackControls from './components/LinePlaybackControls'
 import { useGameStore } from './store/gameStore'
 import { initializeTheme } from './lib/theme'
 import { useStockfish } from './engine/useStockfish'
 import { parseUciMove } from './utils/uci'
+import { useLinePlayer } from './lib/hooks/useLinePlayer'
 
 function App() {
   const isDarkMode = useGameStore((state) => state.isDarkMode)
@@ -18,6 +20,9 @@ function App() {
 
   // Initialize Stockfish engine
   const engine = useStockfish(chess)
+
+  // Enable automatic line playback
+  useLinePlayer()
 
   useEffect(() => {
     initializeTheme()
@@ -112,6 +117,7 @@ function App() {
         </div>
       </main>
       <PromotionModal />
+      <LinePlaybackControls />
     </div>
   )
 }

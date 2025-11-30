@@ -3,6 +3,7 @@ import { Chess, Square, PieceSymbol } from 'chess.js'
 import { PvLinePosition, fenToPvLineActions } from '../utils/pvLine'
 import { ArrowState } from '../lib/actions/ArrowController'
 import { HighlightState } from '../lib/actions/HighlightController'
+import { ChessLine } from '../lib/actions/chessLines'
 
 export type PlayerColor = 'w' | 'b'
 export type PieceType = 'p' | 'n' | 'b' | 'r' | 'q' | 'k'
@@ -44,6 +45,15 @@ interface GameState {
     positions: PvLinePosition[]
     originalFen: string // Original game FEN when line was shown
     currentIndex: number
+  } | null
+
+  // Line playback
+  playingLine: {
+    line: ChessLine
+    currentMoveIndex: number
+    status: 'playing' | 'paused' | 'stopped'
+    startFen: string // FEN when line started
+    moveDelay: number // Delay in ms between moves
   } | null
 
   // Drag state
@@ -94,6 +104,15 @@ interface GameState {
   nextPvMove: () => void
   prevPvMove: () => void
   setPvMoveIndex: (index: number) => void
+
+  // Line playback actions
+  startPlayingLine: (line: ChessLine, moveDelay?: number) => void
+  stopPlayingLine: () => void
+  pausePlayingLine: () => void
+  resumePlayingLine: () => void
+  nextLineMove: () => boolean
+  prevLineMove: () => boolean
+  setLineMoveDelay: (delay: number) => void
 }
 
 const initialSettings: GameSettings = {
@@ -141,6 +160,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   arrows: [],
   highlights: [],
   displayedPvLine: null,
+  playingLine: null,
 
   draggedPiece: null,
 
@@ -560,5 +580,148 @@ export const useGameStore = create<GameState>((set, get) => ({
   exportPGN: () => {
     const { chess } = get()
     return chess.pgn()
+  },
+
+  startPlayingLine: (line, moveDelay = 1000) => {
+    const { fen } = get()
+
+    // Reset board to starting position before starting the line
+    const newChess = new Chess()
+    const status = getGameStatus(newChess)
+
+    set({
+      chess: newChess,
+      fen: newChess.fen(),
+      moveHistory: [],
+      currentPly: 0,
+      playingLine: {
+        line,
+        currentMoveIndex: 0,
+        status: 'playing',
+        startFen: fen,
+        moveDelay,
+      },
+      selectedSquare: null,
+      legalMoves: [],
+      arrows: [],
+      highlights: [],
+      displayedPvLine: null,
+      ...status,
+    })
+  },
+
+  stopPlayingLine: () => {
+    const { playingLine } = get()
+    if (!playingLine) return
+
+    set({
+      playingLine: null,
+    })
+  },
+
+  pausePlayingLine: () => {
+    const { playingLine } = get()
+    if (!playingLine || playingLine.status !== 'playing') return
+
+    set({
+      playingLine: {
+        ...playingLine,
+        status: 'paused',
+      },
+    })
+  },
+
+  resumePlayingLine: () => {
+    const { playingLine } = get()
+    if (!playingLine || playingLine.status !== 'paused') return
+
+    set({
+      playingLine: {
+        ...playingLine,
+        status: 'playing',
+      },
+    })
+  },
+
+  nextLineMove: () => {
+    const { playingLine, chess } = get()
+    if (!playingLine) return false
+
+    const { line, currentMoveIndex } = playingLine
+
+    // Check if we've reached the end of the line
+    if (currentMoveIndex >= line.moves.length) {
+      set({
+        playingLine: {
+          ...playingLine,
+          status: 'stopped',
+        },
+      })
+      return false
+    }
+
+    // Get the next move in SAN format
+    const sanMove = line.moves[currentMoveIndex]
+
+    try {
+      // Make the move using SAN notation
+      const move = chess.move(sanMove)
+      if (!move) {
+        console.error(`Invalid move in line: ${sanMove}`)
+        return false
+      }
+
+      const newFen = chess.fen()
+      const newHistory = buildMoveHistory(chess)
+      const status = getGameStatus(chess)
+
+      set({
+        fen: newFen,
+        moveHistory: newHistory,
+        currentPly: newHistory.length,
+        playingLine: {
+          ...playingLine,
+          currentMoveIndex: currentMoveIndex + 1,
+        },
+        selectedSquare: null,
+        legalMoves: [],
+        ...status,
+      })
+
+      return true
+    } catch (error) {
+      console.error(`Error making move ${sanMove}:`, error)
+      return false
+    }
+  },
+
+  prevLineMove: () => {
+    const { playingLine } = get()
+    if (!playingLine || playingLine.currentMoveIndex === 0) return false
+
+    // Use the regular undo functionality
+    get().undoMove()
+
+    // Update the line playback index
+    set({
+      playingLine: {
+        ...playingLine,
+        currentMoveIndex: playingLine.currentMoveIndex - 1,
+      },
+    })
+
+    return true
+  },
+
+  setLineMoveDelay: (delay) => {
+    const { playingLine } = get()
+    if (!playingLine) return
+
+    set({
+      playingLine: {
+        ...playingLine,
+        moveDelay: delay,
+      },
+    })
   },
 }))

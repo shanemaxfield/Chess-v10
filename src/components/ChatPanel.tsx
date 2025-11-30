@@ -31,6 +31,7 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
   const setArrows = useGameStore((state) => state.setArrows)
   const highlights = useGameStore((state) => state.highlights)
   const setHighlights = useGameStore((state) => state.setHighlights)
+  const startPlayingLine = useGameStore((state) => state.startPlayingLine)
 
   // Initialize LLM service on mount
   useEffect(() => {
@@ -42,15 +43,23 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
     const actions: string[] = []
     let responseText = fallbackResponse
 
-    // 1) Apply moves (arrows and highlights are automatically cleared by makeMove)
+    // 1) Play a line (if specified)
+    if (plan.line) {
+      const { line, moveDelay } = plan.line
+      startPlayingLine(line, moveDelay || 1000)
+      responseText = `Playing line: "${line.name}"\n${line.description}\nMoves: ${line.moves.join(', ')}`
+      return { responseText }
+    }
+
+    // 2) Apply moves (arrows and highlights are automatically cleared by makeMove)
     if (plan.moves && plan.moves.length > 0) {
       for (const move of plan.moves) {
         const piece = chess.get(move.from as any)
-        const pieceName = piece ? 
-          (piece.type === 'p' ? 'pawn' : 
-           piece.type === 'n' ? 'knight' : 
-           piece.type === 'b' ? 'bishop' : 
-           piece.type === 'r' ? 'rook' : 
+        const pieceName = piece ?
+          (piece.type === 'p' ? 'pawn' :
+           piece.type === 'n' ? 'knight' :
+           piece.type === 'b' ? 'bishop' :
+           piece.type === 'r' ? 'rook' :
            piece.type === 'q' ? 'queen' : 'king') : 'piece'
         const success = makeMove(move.from as any, move.to as any, move.promotion)
         if (success) {
@@ -61,7 +70,7 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
       }
     }
 
-    // 2) Apply arrows
+    // 3) Apply arrows
     if (plan.arrows && plan.arrows.length > 0) {
       const newArrows = reconcileArrows(arrows, plan.arrows)
       setArrows(newArrows)
@@ -70,7 +79,7 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
       })
     }
 
-    // 3) Apply highlights
+    // 4) Apply highlights
     if (plan.highlights && plan.highlights.length > 0) {
       const newHighlights = reconcileHighlights(highlights, plan.highlights)
       setHighlights(newHighlights)
