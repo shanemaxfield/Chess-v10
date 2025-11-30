@@ -17,6 +17,7 @@ import {
 } from '../lib/teaching/MoveInstructionParser'
 import { VariationDisplay } from './VariationDisplay'
 import { AnimationControls } from './AnimationControls'
+import { analyzeQuery } from '../lib/teaching/QueryAnalyzer'
 
 interface Message {
   id: number
@@ -170,8 +171,14 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
       let followUps: string[] | undefined
 
       if (useLLM) {
-        // First try teaching system for opening demonstrations and analysis
-        if (orchestratorRef.current) {
+        // Quick analysis to determine if this is a teaching query
+        const queryAnalysis = analyzeQuery(userInput)
+        const isTeachingQuery = queryAnalysis.type === 'opening_demonstration' ||
+                                queryAnalysis.type === 'comparison' ||
+                                queryAnalysis.type === 'tactical_pattern'
+
+        // Only use teaching system for teaching queries
+        if (isTeachingQuery && orchestratorRef.current) {
           try {
             const teachingResult = await orchestratorRef.current.processQuery(userInput, fen)
 
@@ -197,11 +204,6 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
                 executePlan(result.plan, result.response)
                 responseText = result.response
                 followUps = result.followUps
-              } else {
-                responseText = 'LLM service not initialized. Using fallback parser.'
-                const plan = planActions(userInput, chess)
-                const executionResult = executePlan(plan, responseText)
-                responseText = executionResult.responseText
               }
             }
           } catch (error) {
@@ -216,13 +218,18 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
             }
           }
         } else {
-          // Use regular LLM service
+          // Use regular LLM service for non-teaching queries
           const llmService = getLLMService()
           if (llmService) {
             const result = await llmService.processMessage(userInput, chess, engine.lines)
             executePlan(result.plan, result.response)
             responseText = result.response
             followUps = result.followUps
+          } else {
+            responseText = 'LLM service not initialized. Using fallback parser.'
+            const plan = planActions(userInput, chess)
+            const executionResult = executePlan(plan, responseText)
+            responseText = executionResult.responseText
           }
         }
       } else {
