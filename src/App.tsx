@@ -6,8 +6,6 @@ import MoveList from './components/MoveList'
 import PromotionModal from './components/PromotionModal'
 import EnginePanel from './components/EnginePanel'
 import ChatPanel from './components/ChatPanel'
-import TeachingPanel from './components/TeachingPanel'
-import TabView from './components/TabView'
 import { useGameStore } from './store/gameStore'
 import { initializeTheme } from './lib/theme'
 import { useStockfish } from './engine/useStockfish'
@@ -95,24 +93,10 @@ function App() {
             <Controls />
           </div>
 
-          {/* Interactive Panels - Secondary focus, prominent placement */}
+          {/* Chat Panel - Secondary focus, prominent placement */}
           <div className="lg:w-[420px] flex flex-col">
-            <div className="h-[600px] overflow-auto">
-              <TabView
-                tabs={[
-                  {
-                    id: 'teaching',
-                    label: '📚 Teaching',
-                    content: <TeachingPanel />,
-                  },
-                  {
-                    id: 'chat',
-                    label: '💬 Chat',
-                    content: <ChatPanel engine={engine} />,
-                  },
-                ]}
-                defaultTab="teaching"
-              />
+            <div className="h-[600px]">
+              <ChatPanel engine={engine} />
             </div>
           </div>
         </div>

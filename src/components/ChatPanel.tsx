@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { planActions } from '../lib/actions/planActions'
 import { reconcileArrows } from '../lib/actions/ArrowController'
@@ -6,6 +6,17 @@ import { reconcileHighlights } from '../lib/actions/HighlightController'
 import { initializeLLMService, getLLMService } from '../lib/llmService'
 import { LLM_CONFIG } from '../config/llmConfig'
 import { UseStockfishReturn } from '../engine/useStockfish'
+import { BoardController, PlaybackState, MoveStep } from '../lib/teaching/BoardController'
+import { ResponseOrchestrator } from '../lib/teaching/ResponseOrchestrator'
+import { getTeachingLLMService } from '../lib/teaching/TeachingLLMService'
+import {
+  Instruction,
+  DemonstrationInstruction,
+  PositionAnalysisInstruction,
+  Variation,
+} from '../lib/teaching/MoveInstructionParser'
+import { VariationDisplay } from './VariationDisplay'
+import { AnimationControls } from './AnimationControls'
 
 interface Message {
   id: number
@@ -25,7 +36,26 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [useLLM, setUseLLM] = useState(true)
 
+  // Teaching system state
+  const [currentInstruction, setCurrentInstruction] = useState<Instruction | null>(null)
+  const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null)
+  const [playbackState, setPlaybackState] = useState<PlaybackState>({
+    isPlaying: false,
+    isPaused: false,
+    currentStep: -1,
+    totalSteps: 0,
+    canStepForward: false,
+    canStepBackward: false,
+  })
+  const [currentSpeed, setCurrentSpeed] = useState<'slow' | 'medium' | 'fast' | 'instant'>('medium')
+  const [currentMoveSAN, setCurrentMoveSAN] = useState<string>('')
+
+  const boardControllerRef = useRef<BoardController | null>(null)
+  const orchestratorRef = useRef<ResponseOrchestrator | null>(null)
+
   const chess = useGameStore((state) => state.chess)
+  const fen = useGameStore((state) => state.fen)
+  const setFen = useGameStore((state) => state.setFen)
   const makeMove = useGameStore((state) => state.makeMove)
   const arrows = useGameStore((state) => state.arrows)
   const setArrows = useGameStore((state) => state.setArrows)
@@ -36,6 +66,31 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
   useEffect(() => {
     initializeLLMService(LLM_CONFIG.OPENAI_API_KEY)
   }, [])
+
+  // Initialize teaching controllers
+  useEffect(() => {
+    if (!boardControllerRef.current) {
+      boardControllerRef.current = new BoardController()
+
+      // Set up step callback
+      boardControllerRef.current.onStep((step: MoveStep, state: PlaybackState) => {
+        setFen(step.fen)
+        setCurrentMoveSAN(step.san)
+        setPlaybackState(state)
+      })
+    }
+
+    if (!orchestratorRef.current) {
+      orchestratorRef.current = new ResponseOrchestrator()
+
+      // Set up LLM callback
+      const llmService = getTeachingLLMService()
+      orchestratorRef.current.setLLMCallback(async (query, context) => {
+        const result = await llmService.generateInstruction(query, context)
+        return result.explanation
+      })
+    }
+  }, [setFen])
 
   const executePlan = (plan: any, fallbackResponse: string): { responseText: string, followUps?: string[] } => {
     // Execute the plan and build response
@@ -115,18 +170,60 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
       let followUps: string[] | undefined
 
       if (useLLM) {
-        // Use LLM service
-        const llmService = getLLMService()
-        if (llmService) {
-          const result = await llmService.processMessage(userInput, chess, engine.lines)
-          executePlan(result.plan, result.response)
-          responseText = result.response
-          followUps = result.followUps
+        // First try teaching system for opening demonstrations and analysis
+        if (orchestratorRef.current) {
+          try {
+            const teachingResult = await orchestratorRef.current.processQuery(userInput, fen)
+
+            if (teachingResult.instruction) {
+              // Handle teaching instruction
+              responseText = teachingResult.responseText
+              setCurrentInstruction(teachingResult.instruction)
+
+              // Load demonstration or analysis
+              if (teachingResult.instruction.type === 'opening_demonstration' ||
+                  teachingResult.instruction.type === 'tactical_pattern') {
+                const demoInstruction = teachingResult.instruction as DemonstrationInstruction
+                loadDemonstration(demoInstruction)
+              } else if (teachingResult.instruction.type === 'position_analysis') {
+                const posInstruction = teachingResult.instruction as PositionAnalysisInstruction
+                setCurrentInstruction(posInstruction)
+              }
+            } else {
+              // Fall back to regular LLM service
+              const llmService = getLLMService()
+              if (llmService) {
+                const result = await llmService.processMessage(userInput, chess, engine.lines)
+                executePlan(result.plan, result.response)
+                responseText = result.response
+                followUps = result.followUps
+              } else {
+                responseText = 'LLM service not initialized. Using fallback parser.'
+                const plan = planActions(userInput, chess)
+                const executionResult = executePlan(plan, responseText)
+                responseText = executionResult.responseText
+              }
+            }
+          } catch (error) {
+            console.error('Teaching system error:', error)
+            // Fall back to regular LLM service
+            const llmService = getLLMService()
+            if (llmService) {
+              const result = await llmService.processMessage(userInput, chess, engine.lines)
+              executePlan(result.plan, result.response)
+              responseText = result.response
+              followUps = result.followUps
+            }
+          }
         } else {
-          responseText = 'LLM service not initialized. Using fallback parser.'
-          const plan = planActions(userInput, chess)
-          const executionResult = executePlan(plan, responseText)
-          responseText = executionResult.responseText
+          // Use regular LLM service
+          const llmService = getLLMService()
+          if (llmService) {
+            const result = await llmService.processMessage(userInput, chess, engine.lines)
+            executePlan(result.plan, result.response)
+            responseText = result.response
+            followUps = result.followUps
+          }
         }
       } else {
         // Use hardcoded parser
@@ -165,6 +262,93 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
   const handleClearChat = () => {
     setMessages([])
     setMessageIdCounter(0)
+    setCurrentInstruction(null)
+    setSelectedVariation(null)
+    if (boardControllerRef.current) {
+      boardControllerRef.current.stop()
+      boardControllerRef.current.reset()
+    }
+  }
+
+  // Teaching system helper functions
+  const loadDemonstration = (instruction: DemonstrationInstruction) => {
+    if (!boardControllerRef.current) return
+
+    const controller = boardControllerRef.current
+    const success = controller.loadMoveSequence(instruction.mainLine.moves, 'san')
+
+    if (success) {
+      controller.setAnimationConfig({
+        speed: currentSpeed,
+        pauseAtMove: instruction.mainLine.pauseAfterMove,
+      })
+      setPlaybackState(controller.getPlaybackState())
+    }
+  }
+
+  const handleVariationClick = (variation: Variation) => {
+    if (!boardControllerRef.current) return
+
+    setSelectedVariation(variation)
+    const controller = boardControllerRef.current
+    controller.reset()
+
+    const success = controller.loadMoveSequence(variation.moves, 'san')
+    if (success) {
+      controller.setAnimationConfig({ speed: currentSpeed })
+      setPlaybackState(controller.getPlaybackState())
+      controller.play()
+    }
+  }
+
+  const handlePlay = async () => {
+    if (!boardControllerRef.current) return
+    await boardControllerRef.current.play()
+    setPlaybackState(boardControllerRef.current.getPlaybackState())
+  }
+
+  const handlePause = () => {
+    if (!boardControllerRef.current) return
+    boardControllerRef.current.pause()
+    setPlaybackState(boardControllerRef.current.getPlaybackState())
+  }
+
+  const handleStop = () => {
+    if (!boardControllerRef.current) return
+    boardControllerRef.current.stop()
+    boardControllerRef.current.reset()
+    setPlaybackState(boardControllerRef.current.getPlaybackState())
+  }
+
+  const handleStepForward = async () => {
+    if (!boardControllerRef.current) return
+    await boardControllerRef.current.stepForward()
+    setPlaybackState(boardControllerRef.current.getPlaybackState())
+  }
+
+  const handleStepBackward = async () => {
+    if (!boardControllerRef.current) return
+    await boardControllerRef.current.stepBackward()
+    setPlaybackState(boardControllerRef.current.getPlaybackState())
+  }
+
+  const handleSpeedChange = (speed: 'slow' | 'medium' | 'fast' | 'instant') => {
+    setCurrentSpeed(speed)
+    if (boardControllerRef.current) {
+      boardControllerRef.current.setAnimationConfig({ speed })
+    }
+  }
+
+  const getVariations = (): Variation[] => {
+    if (!currentInstruction) return []
+
+    if (currentInstruction.type === 'opening_demonstration' || currentInstruction.type === 'tactical_pattern') {
+      return (currentInstruction as DemonstrationInstruction).continuations
+    } else if (currentInstruction.type === 'position_analysis') {
+      return (currentInstruction as PositionAnalysisInstruction).topMoves
+    }
+
+    return []
   }
 
   return (
@@ -278,6 +462,35 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
           </div>
         )}
       </div>
+
+      {/* Teaching Controls - Animation and Variations */}
+      {(playbackState.totalSteps > 0 || getVariations().length > 0) && (
+        <div className="border-t border-stone-200/50 dark:border-stone-700/50 p-4 space-y-3 bg-stone-50/30 dark:bg-stone-900/30">
+          {/* Animation Controls */}
+          {playbackState.totalSteps > 0 && (
+            <AnimationControls
+              playbackState={playbackState}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onStop={handleStop}
+              onStepForward={handleStepForward}
+              onStepBackward={handleStepBackward}
+              onSpeedChange={handleSpeedChange}
+              currentSpeed={currentSpeed}
+              currentMove={currentMoveSAN}
+            />
+          )}
+
+          {/* Variations */}
+          {getVariations().length > 0 && (
+            <VariationDisplay
+              variations={getVariations()}
+              onVariationClick={handleVariationClick}
+              selectedVariation={selectedVariation}
+            />
+          )}
+        </div>
+      )}
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="p-4 border-t border-stone-200/50 dark:border-stone-700/50 bg-stone-50/50 dark:bg-stone-900/50">
