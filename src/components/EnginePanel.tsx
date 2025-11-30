@@ -109,8 +109,8 @@ function EnginePanel({
     return (
       <div className="panel-elegant p-6">
         <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-          <span className="ml-3 text-stone-600 dark:text-stone-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">
             Loading Stockfish engine...
           </span>
         </div>
@@ -122,7 +122,7 @@ function EnginePanel({
     <div className="panel-elegant p-3 flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-stone-400" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
             <path d="M13 7H7v6h6V7z" />
             <path
               fillRule="evenodd"
@@ -130,13 +130,13 @@ function EnginePanel({
               clipRule="evenodd"
             />
           </svg>
-          <h2 className="text-sm font-semibold text-stone-100">
+          <h2 className="text-sm font-semibold text-gray-100">
             Stockfish
           </h2>
           {engine.thinking && (
             <div className="flex items-center gap-1.5">
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-amber-400"></div>
-              <span className="text-xs text-amber-400">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400"></div>
+              <span className="text-xs text-blue-400">
                 d{engine.lines[0]?.depth || 0}
               </span>
             </div>
@@ -169,7 +169,7 @@ function EnginePanel({
       {/* PV Lines - Compact horizontal scrollable */}
       <div className="flex-1 overflow-y-auto mb-2 elegant-scrollbar">
         {engine.lines.length === 0 && !engine.thinking ? (
-          <p className="text-stone-400 text-xs text-center py-4">
+          <p className="text-gray-400 text-xs text-center py-4">
             Analysis starts automatically
           </p>
         ) : (
@@ -185,8 +185,8 @@ function EnginePanel({
                   key={line.multipv}
                   className={`rounded transition-all border ${
                     selectedPvIndex === index
-                      ? 'bg-amber-900/20 border-amber-700'
-                      : 'bg-slate-800/50 border-slate-700'
+                      ? 'bg-blue-900/20 border-blue-700'
+                      : 'bg-gray-800/50 border-gray-700'
                   }`}
                 >
                   <div
@@ -199,29 +199,29 @@ function EnginePanel({
                           line.score.type === 'mate'
                             ? 'text-red-400'
                             : line.score.value > 0
-                            ? 'text-emerald-400'
-                            : 'text-amber-400'
+                            ? 'text-blue-400'
+                            : 'text-blue-400'
                         }`}
                       >
                         {formatScore(line.score, isWhiteToMove, true)}
                       </span>
-                      <div className="text-xs text-stone-300 truncate">
+                      <div className="text-xs text-gray-300 truncate">
                         {line.san && line.san.length > 0 ? (
                           <span>{line.san.slice(0, 8).join(' ')}</span>
                         ) : (
-                          <span className="text-stone-500">
+                          <span className="text-gray-500">
                             {line.pv.slice(0, 8).join(' ')}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-stone-400 whitespace-nowrap bg-slate-700 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-gray-400 whitespace-nowrap bg-gray-700 px-1.5 py-0.5 rounded">
                         d{line.depth}
                       </span>
                       <button
                         onClick={(e) => handleTogglePvLine(line, index, e)}
-                        className="px-1.5 py-0.5 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+                        className="px-1.5 py-0.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                         title={isExpanded ? "Hide line" : "Show line"}
                       >
                         {isExpanded ? '▼' : '▶'}
@@ -230,7 +230,7 @@ function EnginePanel({
                   </div>
 
                   {isExpanded && isActiveLine && totalMoves !== null && (
-                    <div className="px-2 pb-2 border-t border-slate-600 pt-2 flex items-center justify-between gap-2">
+                    <div className="px-2 pb-2 border-t border-gray-600 pt-2 flex items-center justify-between gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -241,7 +241,7 @@ function EnginePanel({
                       >
                         ◀
                       </button>
-                      <span className="text-xs text-stone-400 font-medium">
+                      <span className="text-xs text-gray-400 font-medium">
                         {currentMoveIndex !== null ? currentMoveIndex + 1 : 0} / {totalMoves}
                       </span>
                       <button
@@ -265,10 +265,10 @@ function EnginePanel({
 
       {/* Settings - Collapsible */}
       {showSettings && (
-        <div className="space-y-2 p-2 bg-slate-800/50 rounded border border-slate-700">
+        <div className="space-y-2 p-2 bg-gray-800/50 rounded border border-gray-700">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium mb-1 text-stone-300">
+              <label className="block text-xs font-medium mb-1 text-gray-300">
                 Lines: {multiPv}
               </label>
               <input
@@ -277,12 +277,12 @@ function EnginePanel({
                 max="10"
                 value={multiPv}
                 onChange={(e) => handleMultiPvChange(parseInt(e.target.value))}
-                className="w-full h-1.5 accent-amber-600"
+                className="w-full h-1.5 accent-blue-600"
                 disabled={engine.thinking}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1 text-stone-300">
+              <label className="block text-xs font-medium mb-1 text-gray-300">
                 Depth: {depth}
               </label>
               <input
@@ -291,7 +291,7 @@ function EnginePanel({
                 max="50"
                 value={depth}
                 onChange={(e) => setDepth(parseInt(e.target.value))}
-                className="w-full h-1.5 accent-amber-600"
+                className="w-full h-1.5 accent-blue-600"
                 disabled={engine.thinking || movetimeMs > 0}
               />
             </div>

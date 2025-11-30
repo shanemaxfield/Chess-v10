@@ -41,7 +41,7 @@ function Controls() {
     <div className="w-full max-w-2xl space-y-4">
       {/* Game Status */}
       <div className="panel-elegant p-4">
-        <p className="text-center text-base font-semibold text-stone-900 dark:text-stone-100">
+        <p className="text-center text-base font-semibold text-gray-900 dark:text-gray-100">
           {getGameStatus()}
         </p>
       </div>
@@ -79,7 +79,7 @@ function Controls() {
       {/* Sound Settings */}
       <div className="panel-elegant p-4">
         <div className="flex items-center justify-between mb-3">
-          <label htmlFor="sound-toggle" className="font-medium text-stone-900 dark:text-stone-100 text-sm">
+          <label htmlFor="sound-toggle" className="font-medium text-gray-900 dark:text-gray-100 text-sm">
             Sound Effects
           </label>
           <input
@@ -87,12 +87,12 @@ function Controls() {
             type="checkbox"
             checked={settings.soundEnabled}
             onChange={(e) => updateSettings({ soundEnabled: e.target.checked })}
-            className="w-5 h-5 rounded accent-amber-600"
+            className="w-5 h-5 rounded accent-blue-600"
           />
         </div>
         {settings.soundEnabled && (
           <div className="flex items-center gap-3">
-            <label htmlFor="volume" className="text-sm text-stone-700 dark:text-stone-300">
+            <label htmlFor="volume" className="text-sm text-gray-700 dark:text-gray-300">
               Volume:
             </label>
             <input
@@ -103,9 +103,9 @@ function Controls() {
               step="0.1"
               value={settings.soundVolume}
               onChange={(e) => updateSettings({ soundVolume: parseFloat(e.target.value) })}
-              className="flex-1 accent-amber-600"
+              className="flex-1 accent-blue-600"
             />
-            <span className="text-sm w-12 text-stone-700 dark:text-stone-300 font-medium">
+            <span className="text-sm w-12 text-gray-700 dark:text-gray-300 font-medium">
               {Math.round(settings.soundVolume * 100)}%
             </span>
           </div>
@@ -114,22 +114,22 @@ function Controls() {
 
       {/* Keyboard Cheat Sheet */}
       <div className="panel-elegant p-4">
-        <h3 className="font-semibold mb-3 text-stone-900 dark:text-stone-100 text-sm">Keyboard Controls</h3>
-        <div className="text-xs space-y-2 text-stone-700 dark:text-stone-300">
+        <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100 text-sm">Keyboard Controls</h3>
+        <div className="text-xs space-y-2 text-gray-700 dark:text-gray-300">
           <p>
-            <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded border border-stone-300 dark:border-stone-600 font-mono">
+            <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 font-mono">
               ← →
             </kbd>
             {' '}Navigate move history
           </p>
           <p>
-            <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded border border-stone-300 dark:border-stone-600 font-mono">
+            <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 font-mono">
               Drag
             </kbd>
             {' '}Move pieces
           </p>
           <p>
-            <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 rounded border border-stone-300 dark:border-stone-600 font-mono">
+            <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 font-mono">
               Esc
             </kbd>
             {' '}Cancel promotion

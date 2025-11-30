@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100;
+    @apply bg-gray-900 text-gray-100;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -13,11 +13,11 @@
 
 @layer components {
   .focus-ring {
-    @apply ring-4 ring-amber-500/50 ring-opacity-50;
+    @apply ring-4 ring-blue-500/50 ring-opacity-50;
   }
 
   .square-highlight-selected {
-    @apply ring-4 ring-amber-400 ring-inset shadow-lg;
+    @apply ring-4 ring-blue-400 ring-inset shadow-lg;
   }
 
   .square-highlight-legal {
@@ -26,15 +26,15 @@
 
   .square-highlight-legal::after {
     content: '';
-    @apply absolute inset-0 m-auto w-8 h-8 bg-stone-800 dark:bg-amber-200 rounded-full opacity-25;
+    @apply absolute inset-0 m-auto w-8 h-8 bg-gray-700 dark:bg-blue-200 rounded-full opacity-25;
   }
 
   .square-highlight-legal-capture::after {
-    @apply w-full h-full bg-transparent border-8 border-stone-800 dark:border-amber-200 opacity-35 rounded-none;
+    @apply w-full h-full bg-transparent border-8 border-gray-700 dark:border-blue-200 opacity-35 rounded-none;
   }
 
   .square-highlight-lastmove {
-    @apply bg-amber-200 dark:bg-amber-900/40 bg-opacity-60;
+    @apply bg-blue-300/30 dark:bg-blue-800/30;
   }
 
   .square-highlight-check {
@@ -51,20 +51,20 @@
 
   /* Elegant panel styling */
   .panel-elegant {
-    @apply bg-slate-900/90 backdrop-blur-sm rounded-xl shadow-xl border border-slate-700/50;
+    @apply bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-gray-700/50;
   }
 
   /* Refined button styles */
   .btn-primary {
-    @apply px-4 py-2.5 bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md;
+    @apply px-4 py-2.5 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md;
   }
 
   .btn-secondary {
-    @apply px-4 py-2.5 bg-gradient-to-br from-stone-600 to-stone-700 hover:from-stone-700 hover:to-stone-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-4 py-2.5 bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-success {
-    @apply px-4 py-2.5 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-4 py-2.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-danger {
@@ -78,11 +78,11 @@
   }
 
   .elegant-scrollbar::-webkit-scrollbar-track {
-    @apply bg-slate-800 rounded-full;
+    @apply bg-gray-800 rounded-full;
   }
 
   .elegant-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-600 rounded-full hover:bg-slate-500;
+    @apply bg-gray-600 rounded-full hover:bg-gray-500;
   }
 }
 
@@ -91,7 +91,7 @@
 }
 
 button:focus-visible {
-  @apply outline-none ring-2 ring-amber-500 ring-offset-2;
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
 }
 
 /* Smooth transitions for theme switching */

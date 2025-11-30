@@ -10,8 +10,8 @@ export default {
       colors: {
         'square-light': '#f0d9b5',
         'square-dark': '#b58863',
-        'square-light-dark': '#aaa23a',
-        'square-dark-dark': '#8ca439',
+        'square-light-dark': '#f0d9b5',
+        'square-dark-dark': '#b58863',
       },
     },
   },

@@ -47,9 +47,7 @@ const Square = memo(({ square, piece, isLight, size, highlightColor }: SquarePro
     return piece.type === 'k' && piece.color === chess.turn()
   }, [isCheck, piece, chess])
 
-  const bgColor = isLight
-    ? 'bg-square-light dark:bg-square-light-dark'
-    : 'bg-square-dark dark:bg-square-dark-dark'
+  const bgColor = isLight ? '#f0d9b5' : '#b58863'
 
   const highlightClasses = []
   if (isLegalMove) {
@@ -72,11 +70,11 @@ const Square = memo(({ square, piece, isLight, size, highlightColor }: SquarePro
   return (
     <div
       data-square={square}
-      className={`relative ${bgColor} ${highlightClasses.join(' ')} cursor-pointer select-none`}
+      className={`relative ${highlightClasses.join(' ')} cursor-pointer select-none`}
       style={{
         width: size,
         height: size,
-        ...(highlightColor ? { backgroundColor: highlightColor } : {})
+        backgroundColor: highlightColor || bgColor,
       }}
       onPointerDown={handlePointerDownOnSquare}
     >

@@ -81,7 +81,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <TopBar />
       <main className="flex-1 flex flex-col gap-4 p-4 mx-auto w-full max-w-[1920px]">
         {/* Main content - Board and Chat side by side */}
