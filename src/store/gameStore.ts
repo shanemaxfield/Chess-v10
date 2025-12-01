@@ -113,6 +113,8 @@ interface GameState {
   stopSequence: () => void
   clearQueue: () => void
   setSequenceDelay: (delay: number) => void
+  parseMoveSequence: (input: string) => string[]
+  playMoveSequence: (input: string) => void
 }
 
 const initialSettings: GameSettings = {
@@ -663,5 +665,52 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setSequenceDelay: (delay: number) => {
     set({ sequenceDelay: delay })
+  },
+
+  parseMoveSequence: (input: string): string[] => {
+    const { chess } = get()
+    const moves: string[] = []
+
+    // Clean up the input - remove move numbers, extra whitespace, and annotations
+    const cleaned = input
+      .replace(/\d+\./g, '') // Remove move numbers like "1.", "2.", etc.
+      .replace(/[+#!?]+/g, '') // Remove check, checkmate, and annotation symbols
+      .replace(/\{[^}]*\}/g, '') // Remove comments in curly braces
+      .replace(/\([^)]*\)/g, '') // Remove variations in parentheses
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim()
+
+    // Split by comma, space, or newline
+    const tokens = cleaned.split(/[,\s\n]+/).filter(t => t.length > 0)
+
+    // Create a temporary chess instance to validate moves
+    const tempChess = new Chess(chess.fen())
+
+    for (const token of tokens) {
+      const trimmed = token.trim()
+      if (!trimmed) continue
+
+      try {
+        // Try to make the move
+        const result = tempChess.move(trimmed)
+        if (result) {
+          moves.push(result.san)
+        }
+      } catch (error) {
+        console.warn(`Could not parse move: ${trimmed}`)
+        // Stop parsing on first invalid move
+        break
+      }
+    }
+
+    return moves
+  },
+
+  playMoveSequence: (input: string) => {
+    const moves = get().parseMoveSequence(input)
+    if (moves.length > 0) {
+      get().queueMoves(moves)
+      get().playSequence()
+    }
   },
 }))

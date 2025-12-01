@@ -19,8 +19,7 @@ function Controls() {
     redoMove,
     flipOrientation,
     updateSettings,
-    queueMoves,
-    playSequence,
+    playMoveSequence,
     stopSequence,
     setSequenceDelay,
   } = useGameStore()
@@ -50,14 +49,8 @@ function Controls() {
   const handlePlaySequence = () => {
     if (!moveInput.trim()) return
 
-    // Split by comma and parse moves
-    const moves = moveInput.split(',').map(m => m.trim()).filter(m => m)
-
-    // Queue the moves
-    queueMoves(moves)
-
-    // Start playing
-    playSequence()
+    // Use the comprehensive move sequence parser
+    playMoveSequence(moveInput)
   }
 
   const handleStopSequence = () => {
@@ -148,7 +141,7 @@ function Controls() {
         <div className="space-y-3">
           <div>
             <label htmlFor="move-input" className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">
-              Enter moves (comma-separated, e.g., e4, e5, Nc3):
+              Enter move sequence (any format - PGN, SAN, comma/space separated):
             </label>
             <input
               id="move-input"
@@ -156,7 +149,7 @@ function Controls() {
               value={moveInput}
               onChange={(e) => setMoveInput(e.target.value)}
               disabled={isPlayingSequence}
-              placeholder="e4, e5, Nc3, Nf6"
+              placeholder="1. e4 e5 2. Nf3 Nc6 3. Bb5"
               className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !isPlayingSequence) {

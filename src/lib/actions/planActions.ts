@@ -55,6 +55,58 @@ function findPieceMove(
 }
 
 /**
+ * Parse multiple moves from a sequence
+ * Supports formats like:
+ * - "e4 e5 Nf3 Nc6" (space-separated)
+ * - "e4, e5, Nf3, Nc6" (comma-separated)
+ * - "1. e4 e5 2. Nf3 Nc6" (numbered notation)
+ * - Full PGN format
+ */
+function parseMoveSequence(chess: Chess, input: string): { from: Square; to: Square }[] | null {
+  const moves: { from: Square; to: Square }[] = []
+
+  // Clean up the input - remove move numbers, extra whitespace, and common PGN annotations
+  let cleaned = input
+    .replace(/\d+\./g, '') // Remove move numbers like "1.", "2.", etc.
+    .replace(/[+#!?]+/g, '') // Remove check, checkmate, and annotation symbols
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim()
+
+  // Split by comma or space
+  const tokens = cleaned.split(/[,\s]+/).filter(t => t.length > 0)
+
+  // If we have more than one token, try parsing as a sequence
+  if (tokens.length > 1) {
+    const tempChess = new Chess(chess.fen())
+
+    for (const token of tokens) {
+      const move = parseChessNotationMove(tempChess, token)
+      if (move) {
+        moves.push(move)
+        // Apply the move to the temp board to validate the next move
+        try {
+          tempChess.move({ from: move.from, to: move.to })
+        } catch (error) {
+          // If the move fails, stop parsing
+          console.warn(`Failed to apply move ${token} in sequence`)
+          break
+        }
+      } else {
+        // If we can't parse a move, stop
+        break
+      }
+    }
+
+    // Only return if we successfully parsed multiple moves
+    if (moves.length > 1) {
+      return moves
+    }
+  }
+
+  return null
+}
+
+/**
  * Parse chess notation move (e.g., "bc8", "Nf3", "e4")
  * Returns move action or null
  */
@@ -156,7 +208,21 @@ export function planActions(input: string, chess: Chess): ActionPlan {
   // Only try if it's not an arrow or highlight command
   if (!q.startsWith("arrow") && !q.startsWith("highlight")) {
     // Try to parse as chess notation (remove common words first)
-    const notationOnly = q.replace(/^(move|play|do|execute)\s+/i, '').trim();
+    const notationOnly = q.replace(/^(move|play|do|execute|demonstrate|show)\s+/i, '').trim();
+
+    // First, try to parse as a move sequence
+    const moveSequence = parseMoveSequence(chess, notationOnly);
+    if (moveSequence && moveSequence.length > 0) {
+      return {
+        moves: moveSequence.map(move => ({
+          type: "move" as const,
+          from: move.from,
+          to: move.to
+        }))
+      };
+    }
+
+    // If not a sequence, try single move
     const chessMove = parseChessNotationMove(chess, notationOnly);
     if (chessMove) {
       return {

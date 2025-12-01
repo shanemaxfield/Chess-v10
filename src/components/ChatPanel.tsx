@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Chess } from 'chess.js'
 import { useGameStore } from '../store/gameStore'
 import { planActions } from '../lib/actions/planActions'
 import { reconcileArrows } from '../lib/actions/ArrowController'
@@ -31,26 +32,54 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
   const setArrows = useGameStore((state) => state.setArrows)
   const highlights = useGameStore((state) => state.highlights)
   const setHighlights = useGameStore((state) => state.setHighlights)
+  const queueMoves = useGameStore((state) => state.queueMoves)
+  const playSequence = useGameStore((state) => state.playSequence)
 
   // Initialize LLM service on mount
   useEffect(() => {
     initializeLLMService(LLM_CONFIG.OPENAI_API_KEY)
   }, [])
 
-  const executePlan = (plan: any, fallbackResponse: string): { responseText: string, followUps?: string[] } => {
+  const executePlan = async (plan: any, fallbackResponse: string): Promise<{ responseText: string, followUps?: string[] }> => {
     // Execute the plan and build response
     const actions: string[] = []
     let responseText = fallbackResponse
 
     // 1) Apply moves (arrows and highlights are automatically cleared by makeMove)
     if (plan.moves && plan.moves.length > 0) {
-      for (const move of plan.moves) {
+      // If there are multiple moves, use the queue system for sequential playback
+      if (plan.moves.length > 1) {
+        // Convert moves to SAN notation for queuing
+        const moveSans: string[] = []
+        const tempChess = new Chess(chess.fen())
+
+        for (const move of plan.moves) {
+          try {
+            const result = tempChess.move({ from: move.from, to: move.to, promotion: move.promotion })
+            if (result) {
+              moveSans.push(result.san)
+            }
+          } catch (error) {
+            console.warn(`Could not validate move ${move.from} to ${move.to}`)
+            break
+          }
+        }
+
+        if (moveSans.length > 0) {
+          queueMoves(moveSans)
+          playSequence()
+          actions.push(`Queued ${moveSans.length} moves: ${moveSans.join(', ')}`)
+          responseText = `Playing ${moveSans.length} moves in sequence: ${moveSans.join(', ')}`
+        }
+      } else {
+        // Single move - execute immediately for responsiveness
+        const move = plan.moves[0]
         const piece = chess.get(move.from as any)
-        const pieceName = piece ? 
-          (piece.type === 'p' ? 'pawn' : 
-           piece.type === 'n' ? 'knight' : 
-           piece.type === 'b' ? 'bishop' : 
-           piece.type === 'r' ? 'rook' : 
+        const pieceName = piece ?
+          (piece.type === 'p' ? 'pawn' :
+           piece.type === 'n' ? 'knight' :
+           piece.type === 'b' ? 'bishop' :
+           piece.type === 'r' ? 'rook' :
            piece.type === 'q' ? 'queen' : 'king') : 'piece'
         const success = makeMove(move.from as any, move.to as any, move.promotion)
         if (success) {
@@ -119,19 +148,19 @@ export default function ChatPanel({ engine }: ChatPanelProps) {
         const llmService = getLLMService()
         if (llmService) {
           const result = await llmService.processMessage(userInput, chess, engine.lines)
-          executePlan(result.plan, result.response)
-          responseText = result.response
+          const executionResult = await executePlan(result.plan, result.response)
+          responseText = executionResult.responseText || result.response
           followUps = result.followUps
         } else {
           responseText = 'LLM service not initialized. Using fallback parser.'
           const plan = planActions(userInput, chess)
-          const executionResult = executePlan(plan, responseText)
+          const executionResult = await executePlan(plan, responseText)
           responseText = executionResult.responseText
         }
       } else {
         // Use hardcoded parser
         const plan = planActions(userInput, chess)
-        const executionResult = executePlan(plan, responseText)
+        const executionResult = await executePlan(plan, responseText)
         responseText = executionResult.responseText
       }
 
